@@ -5,7 +5,8 @@ mark where the text goes, upload a CSV of recipients, match columns to text boxe
 generate one certificate per row.
 
 Built with Next.js 16 (App Router), React 19, Tailwind CSS v4 and shadcn/ui. It talks to
-a separate Django REST backend, which holds all the data.
+a separate Django REST backend ([certifier_reloaded_backend](https://github.com/Shantanu700/certifier_reloaded_backend)),
+which holds all the data.
 
 ## Running the project
 
