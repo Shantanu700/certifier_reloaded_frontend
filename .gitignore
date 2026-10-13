@@ -39,3 +39,24 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# agent tooling (per-machine, not project code)
+.agents/
+.claude/
+.codex/
+.impeccable/
+skills-lock.json
+
+# stale scaffolding lockfile — bun.lock is the real one
+package-lock.json
+
+# codegen logs
+openapi-ts-error-*.log
+
+# design-sync
+.ds-sync/
+ds-bundle/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+.design-sync/ds-src/gf.css

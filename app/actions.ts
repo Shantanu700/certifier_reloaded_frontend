@@ -1,0 +1,600 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+
+import { templateFileUrl } from "@/components/template-preview";
+import {
+  ALIGNMENTS,
+  FONTS,
+  type BoxDraft,
+  type ImageBoxDraft,
+} from "@/lib/boxes";
+import { asNamingParts } from "@/lib/api";
+import { SESSION_COOKIE, requireUser, sessionHeader } from "@/lib/session";
+import {
+  deleteCertificateBatches,
+  deleteCertificateTemplate,
+  deleteCertificateTemplateBoxes,
+  deleteCertificateTemplateImageBoxes,
+  deleteCoreLogin,
+  postCertificateBatchesExport,
+  postCertificateBatchesGenerate,
+  postCertificateTemplate,
+  postCertificateTemplateBatches,
+  postCertificateTemplateBoxes,
+  postCertificateTemplateImageBoxes,
+  postCoreLogin,
+  postCoreUploadUrl,
+  putCertificateBatchesMapping,
+  putCertificateBatchesNaming,
+  retrieveCertificateBatchExportProgress,
+  retrieveCertificateBatchProgress,
+  putCertificateTemplate,
+  putCertificateTemplateBoxes,
+  putCertificateTemplateImageBoxes,
+  type PresignUploadRequest,
+  type PresignUploadResponse,
+  type TemplateBox,
+  type TemplateImageBox,
+} from "@/src/client";
+
+export type LoginState = { error: string; username: string } | null;
+
+function sessionIdFrom(response: Response | undefined) {
+  const cookie = response?.headers
+    .getSetCookie()
+    .find((c) => c.startsWith(`${SESSION_COOKIE}=`));
+  return cookie?.split(";", 1)[0].slice(SESSION_COOKIE.length + 1);
+}
+
+function messageFrom(error: unknown, fallback: string) {
+  if (error && typeof error === "object") {
+    if ("msg" in error && typeof error.msg === "string") return error.msg;
+    if ("detail" in error && Array.isArray(error.detail)) return error.detail.join(" ");
+  }
+  return fallback;
+}
+
+export async function login(
+  _prev: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  const username = String(formData.get("username") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
+
+  if (!username || !password) {
+    return { error: "Username and password are both required.", username };
+  }
+
+  let result;
+  try {
+    result = await postCoreLogin({
+      headers: {
+        Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString("base64")}`,
+      },
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?", username };
+  }
+
+  if (result.error) {
+    console.error("login failed", result.response?.status, result.error);
+    return {
+      error: messageFrom(result.error, "Sign-in failed. Please try again."),
+      username,
+    };
+  }
+
+  const sessionId = sessionIdFrom(result.response);
+  if (!sessionId) {
+    return { error: "The server didn't return a session.", username };
+  }
+
+  (await cookies()).set(SESSION_COOKIE, sessionId, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: process.env.NODE_ENV === "production",
+  });
+
+  redirect("/home");
+}
+
+export async function logout() {
+  const store = await cookies();
+  const sessionId = store.get(SESSION_COOKIE)?.value;
+
+  if (sessionId) {
+    try {
+      await deleteCoreLogin({ headers: sessionHeader(sessionId) });
+    } catch {}
+  }
+
+  store.delete(SESSION_COOKIE);
+  redirect("/login");
+}
+
+export type TemplateState = { error: string } | { saved: true } | null;
+
+/**
+ * Step 1 of the client-direct S3 upload. The browser can't call this endpoint
+ * itself — the sessionid cookie is httpOnly on our origin — so it hops through
+ * here. Only the bytes (step 2) go straight from the browser to S3.
+ */
+export async function presignUpload(
+  body: PresignUploadRequest
+): Promise<PresignUploadResponse | { error: string }> {
+  const { sessionId } = await requireUser();
+
+  let result;
+  try {
+    result = await postCoreUploadUrl({ body, headers: sessionHeader(sessionId) });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error || !result.data) {
+    console.error("presign failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't start that upload.") };
+  }
+
+  return result.data;
+}
+
+export async function uploadTemplate(
+  _prev: TemplateState,
+  formData: FormData
+): Promise<TemplateState> {
+  const { sessionId } = await requireUser();
+  const name = String(formData.get("name") ?? "").trim();
+  const upload = String(formData.get("upload") ?? "");
+
+  if (!name) return { error: "Give the template a name." };
+  if (!upload) return { error: "Choose a PDF or image to upload." };
+
+  let result;
+  try {
+    result = await postCertificateTemplate({
+      body: { name, upload },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error || !result.data?.uuid) {
+    console.error("template upload failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Upload failed. Please try again.") };
+  }
+
+  revalidatePath("/templates");
+  redirect(`/templates/${result.data.uuid}`);
+}
+
+export async function updateTemplate(
+  _prev: TemplateState,
+  formData: FormData
+): Promise<TemplateState> {
+  const { sessionId } = await requireUser();
+  const uuid = String(formData.get("uuid") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const upload = String(formData.get("upload") ?? "");
+
+  if (!uuid) return { error: "Missing template reference. Reload and try again." };
+  if (!name) return { error: "Give the template a name." };
+
+  let result;
+  try {
+    result = await putCertificateTemplate({
+      path: { uuid },
+      body: upload ? { name, upload } : { name },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error) {
+    console.error("template update failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Save failed. Please try again.") };
+  }
+
+  revalidatePath("/templates");
+  revalidatePath(`/templates/${uuid}`);
+  return { saved: true };
+}
+
+export async function deleteTemplate(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!uuid) redirect("/templates");
+
+  let error: unknown;
+  try {
+    const result = await deleteCertificateTemplate({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+    error = result.error;
+  } catch {
+    error = { msg: "Can't reach the server. Is the API running?" };
+  }
+
+  if (error) {
+    console.error("template delete failed", error);
+    const message = messageFrom(error, "Delete failed. Please try again.");
+    redirect(`/templates/${uuid}?error=${encodeURIComponent(message)}`);
+  }
+
+  revalidatePath("/templates");
+  redirect("/templates");
+}
+
+
+export type BoxState = { box: TemplateBox } | { error: string };
+
+function invalidRect(draft: ImageBoxDraft) {
+  if (!/^[-a-zA-Z0-9_]{1,100}$/.test(draft.key)) {
+    return "Keys can only use letters, numbers, hyphens and underscores.";
+  }
+  for (const field of ["x", "y", "width", "height"] as const) {
+    if (!Number.isInteger(draft[field]) || draft[field] < 0) {
+      return "Position and size must be whole numbers of pixels.";
+    }
+  }
+  if (draft.width < 1 || draft.height < 1) return "A box needs a size.";
+}
+
+function invalidBox(draft: BoxDraft) {
+  const problem = invalidRect(draft);
+  if (problem) return problem;
+  if (!FONTS.includes(draft.font)) return "Unknown font.";
+  if (!Number.isInteger(draft.font_size) || draft.font_size < 1) {
+    return "Font size must be at least 1.";
+  }
+  if (!/^#[0-9a-fA-F]{6}$/.test(draft.font_color)) {
+    return "Colour must be a hex value like #101010.";
+  }
+  if (!ALIGNMENTS.includes(draft.alignment)) return "Unknown alignment.";
+}
+
+export async function saveBox(
+  templateUuid: string,
+  draft: BoxDraft
+): Promise<BoxState> {
+  const { sessionId } = await requireUser();
+
+  const problem = invalidBox(draft);
+  if (problem) return { error: problem };
+
+  const { uuid, ...body } = draft;
+
+  let result;
+  try {
+    result = uuid
+      ? await putCertificateTemplateBoxes({
+          path: { template_uuid: templateUuid, uuid },
+          body,
+          headers: sessionHeader(sessionId),
+        })
+      : await postCertificateTemplateBoxes({
+          path: { template_uuid: templateUuid },
+          body,
+          headers: sessionHeader(sessionId),
+        });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error || !result.data) {
+    console.error("box save failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't save that box.") };
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  return { box: result.data };
+}
+
+export async function deleteBox(
+  templateUuid: string,
+  uuid: string
+): Promise<{ error: string } | null> {
+  const { sessionId } = await requireUser();
+
+  let result;
+  try {
+    result = await deleteCertificateTemplateBoxes({
+      path: { template_uuid: templateUuid, uuid },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error) {
+    console.error("box delete failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't delete that box.") };
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  return null;
+}
+
+export type ImageBoxState =
+  | { box: TemplateImageBox; imageUrl?: string }
+  | { error: string };
+
+export async function saveImageBox(
+  templateUuid: string,
+  draft: ImageBoxDraft,
+  upload?: string
+): Promise<ImageBoxState> {
+  const { sessionId } = await requireUser();
+
+  const problem = invalidRect(draft);
+  if (problem) return { error: problem };
+
+  const { uuid, ...rect } = draft;
+  if (!uuid && !upload) return { error: "Choose an image for this box." };
+
+  let result;
+  try {
+    result = uuid
+      ? await putCertificateTemplateImageBoxes({
+          path: { template_uuid: templateUuid, uuid },
+          body: upload ? { ...rect, upload } : rect,
+          headers: sessionHeader(sessionId),
+        })
+      : await postCertificateTemplateImageBoxes({
+          path: { template_uuid: templateUuid },
+          body: { ...rect, upload: upload! },
+          headers: sessionHeader(sessionId),
+        });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error || !result.data) {
+    console.error("image box save failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't save that image box.") };
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  return { box: result.data, imageUrl: templateFileUrl(result.data.image) };
+}
+
+export async function deleteImageBox(
+  templateUuid: string,
+  uuid: string
+): Promise<{ error: string } | null> {
+  const { sessionId } = await requireUser();
+
+  let result;
+  try {
+    result = await deleteCertificateTemplateImageBoxes({
+      path: { template_uuid: templateUuid, uuid },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?" };
+  }
+
+  if (result.error) {
+    console.error("image box delete failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't delete that image box.") };
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  return null;
+}
+
+function stepUrl(templateUuid: string, step: string, batchUuid?: string) {
+  return `/templates/${templateUuid}?step=${step}${batchUuid ? `&batch=${batchUuid}` : ""}`;
+}
+
+function fail(url: string, message: string): never {
+  const join = url.includes("?") ? "&" : "?";
+  redirect(`${url}${join}error=${encodeURIComponent(message)}`);
+}
+
+export async function uploadBatch(templateUuid: string, upload: string) {
+  const { sessionId } = await requireUser();
+  if (!templateUuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "csv");
+
+  if (!upload) fail(here, "Choose a CSV to upload.");
+
+  let result;
+  try {
+    result = await postCertificateTemplateBatches({
+      path: { template_uuid: templateUuid },
+      body: { upload },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    fail(here, "Can't reach the server. Is the API running?");
+  }
+
+  if (result.error || !result.data?.uuid) {
+    console.error("batch upload failed", result.response?.status, result.error);
+    fail(here, messageFrom(result.error, "That CSV wasn't accepted."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(stepUrl(templateUuid, "mapping", result.data.uuid));
+}
+
+export async function saveMapping(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "mapping", uuid);
+
+  const mapping: Record<string, string> = {};
+  for (const [field, value] of formData.entries()) {
+    if (!field.startsWith("map:") || typeof value !== "string" || !value) continue;
+    mapping[field.slice(4)] = value;
+  }
+
+  let result;
+  try {
+    result = await putCertificateBatchesMapping({
+      path: { uuid },
+      body: { mapping },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    fail(here, "Can't reach the server. Is the API running?");
+  }
+
+  if (result.error) {
+    console.error("mapping save failed", result.response?.status, result.error);
+    fail(here, messageFrom(result.error, "Couldn't save that mapping."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(stepUrl(templateUuid, "generate", uuid));
+}
+
+export async function saveNaming(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "mapping", uuid);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(String(formData.get("naming") ?? "[]"));
+  } catch {
+    fail(here, "That name pattern didn't come through. Try again.");
+  }
+  const parts = asNamingParts(parsed);
+
+  let result;
+  try {
+    result = await putCertificateBatchesNaming({
+      path: { uuid },
+      body: { naming_convention: parts.length ? parts : null },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    fail(here, "Can't reach the server. Is the API running?");
+  }
+
+  if (result.error) {
+    console.error("naming save failed", result.response?.status, result.error);
+    fail(here, messageFrom(result.error, "Couldn't save that name pattern."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(here);
+}
+
+export async function generateBatch(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "generate", uuid);
+
+  let result;
+  try {
+    result = await postCertificateBatchesGenerate({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    fail(here, "Can't reach the server. Is the API running?");
+  }
+
+  if (result.error) {
+    console.error("generate failed", result.response?.status, result.error);
+    fail(here, messageFrom(result.error, "Couldn't start generation."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(here);
+}
+
+export async function batchProgress(uuid: string) {
+  const { sessionId } = await requireUser();
+  try {
+    const result = await retrieveCertificateBatchProgress({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+    return result.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function exportBatch(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "generate", uuid);
+
+  let result;
+  try {
+    result = await postCertificateBatchesExport({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    fail(here, "Can't reach the server. Is the API running?");
+  }
+
+  if (result.error) {
+    console.error("export failed", result.response?.status, result.error);
+    fail(here, messageFrom(result.error, "Couldn't start the export."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(here);
+}
+
+export async function exportProgress(uuid: string) {
+  const { sessionId } = await requireUser();
+  try {
+    const result = await retrieveCertificateBatchExportProgress({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+    return result.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteBatch(formData: FormData) {
+  const { sessionId } = await requireUser();
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "generate", uuid);
+
+  let error: unknown;
+  try {
+    const result = await deleteCertificateBatches({
+      path: { uuid },
+      headers: sessionHeader(sessionId),
+    });
+    error = result.error;
+  } catch {
+    error = { msg: "Can't reach the server. Is the API running?" };
+  }
+
+  if (error) {
+    console.error("batch delete failed", error);
+    fail(here, messageFrom(error, "Delete failed. Please try again."));
+  }
+
+  revalidatePath(`/templates/${templateUuid}`);
+  redirect(stepUrl(templateUuid, "csv"));
+}
