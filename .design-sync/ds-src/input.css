@@ -1,0 +1,16 @@
+/* Design-sync stylesheet: the app's globals.css plus self-contained brand fonts
+   (next/font supplies these at runtime in the app; the DS bundle must ship them). */
+@import "../../app/globals.css";
+@import "./fonts.css";
+
+@source "../../components";
+@source "../../app";
+@source "../previews";
+
+/* Tailwind only emits utilities it sees used. The design agent builds NEW screens
+   with these semantic tokens, so the DS-specific colour surface is safelisted —
+   generic geometry utilities come from the design runtime's own Tailwind. */
+@source inline("{bg,text,border,ring,outline,fill,stroke,divide,decoration}-{background,foreground,card,card-foreground,popover,popover-foreground,primary,primary-foreground,secondary,secondary-foreground,muted,muted-foreground,accent,accent-foreground,destructive,border,input,ring,chart-1,chart-2,chart-3,chart-4,chart-5}");
+@source inline("font-{sans,mono,heading}");
+@source inline("border-{0,2,4}");
+@source inline("tracking-{tighter,tight,normal,wide,wider,widest}");

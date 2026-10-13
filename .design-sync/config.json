@@ -1,0 +1,31 @@
+{
+  "projectId": "98ed3e50-7a3f-430a-b297-cdae497ca93b",
+  "shape": "package",
+  "pkg": "certifier_reloaded_frontend",
+  "globalName": "CertifierDS",
+  "srcDir": "components",
+  "buildCmd": "bunx @tailwindcss/cli -i .design-sync/ds-src/input.css -o .design-sync/ds-src/compiled.css --minify",
+  "entry": "./.design-sync/ds-src/entry.tsx",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".design-sync/ds-src/compiled.css",
+  "readmeHeader": ".design-sync/conventions.md",
+  "guidelinesGlob": ["theme.md", "PRODUCT.md"],
+  "componentSrcMap": {
+    "Button": "components/ui/button.tsx",
+    "Wordmark": "components/wordmark.tsx",
+    "BatchStatus": "components/batch-status.tsx",
+    "SubmitButton": "components/submit-button.tsx",
+    "ThemeToggle": "components/theme-toggle.tsx",
+    "AppHeader": null,
+    "BatchPanels": null,
+    "BatchProgress": null,
+    "ExportProgress": null,
+    "CsvUploadForm": null,
+    "NamingEditor": null,
+    "StepLink": null,
+    "Modal": null,
+    "TemplateForm": null,
+    "TemplatePreview": null,
+    "TemplateWorkspace": null
+  }
+}
