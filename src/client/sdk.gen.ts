@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCoreLoginData, DeleteCoreLoginErrors, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
+import type { DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCoreLoginData, DeleteCoreLoginErrors, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -393,6 +393,18 @@ export const putCertificateTemplate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
+ * Google Login/Sign Up API View
+ */
+export const postCoreGoogle = <ThrowOnError extends boolean = false>(options: Options<PostCoreGoogleData, ThrowOnError>): RequestResult<PostCoreGoogleResponses, PostCoreGoogleErrors, ThrowOnError> => (options.client ?? client).post<PostCoreGoogleResponses, PostCoreGoogleErrors, ThrowOnError>({
+    url: '/core/google/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Login/Logout API View
  */
 export const deleteCoreLogin = <ThrowOnError extends boolean = false>(options?: Options<DeleteCoreLoginData, ThrowOnError>): RequestResult<unknown, DeleteCoreLoginErrors, ThrowOnError> => (options?.client ?? client).delete<unknown, DeleteCoreLoginErrors, ThrowOnError>({
@@ -422,6 +434,18 @@ export const getCoreLogin = <ThrowOnError extends boolean = false>(options?: Opt
  * Login/Logout API View
  */
 export const postCoreLogin = <ThrowOnError extends boolean = false>(options: Options<PostCoreLoginData, ThrowOnError>): RequestResult<PostCoreLoginResponses, PostCoreLoginErrors, ThrowOnError> => (options.client ?? client).post<PostCoreLoginResponses, PostCoreLoginErrors, ThrowOnError>({ url: '/core/login/', ...options });
+
+/**
+ * Sign Up API View
+ */
+export const postCoreRegister = <ThrowOnError extends boolean = false>(options: Options<PostCoreRegisterData, ThrowOnError>): RequestResult<PostCoreRegisterResponses, PostCoreRegisterErrors, ThrowOnError> => (options.client ?? client).post<PostCoreRegisterResponses, PostCoreRegisterErrors, ThrowOnError>({
+    url: '/core/register/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
 
 /**
  * Request a presigned S3 upload URL for a client-direct file upload.

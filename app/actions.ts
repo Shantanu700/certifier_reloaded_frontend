@@ -25,7 +25,9 @@ import {
   postCertificateTemplateBatches,
   postCertificateTemplateBoxes,
   postCertificateTemplateImageBoxes,
+  postCoreGoogle,
   postCoreLogin,
+  postCoreRegister,
   postCoreUploadUrl,
   putCertificateBatchesMapping,
   putCertificateBatchesNaming,
@@ -53,6 +55,9 @@ function messageFrom(error: unknown, fallback: string) {
   if (error && typeof error === "object") {
     if ("msg" in error && typeof error.msg === "string") return error.msg;
     if ("detail" in error && Array.isArray(error.detail)) return error.detail.join(" ");
+    // SerializerError (418) bodies are DRF field errors: { field: ["message", ...] }
+    const first = Object.values(error).flat().find((v) => typeof v === "string");
+    if (first) return first;
   }
   return fallback;
 }
@@ -87,10 +92,13 @@ export async function login(
     };
   }
 
-  const sessionId = sessionIdFrom(result.response);
-  if (!sessionId) {
-    return { error: "The server didn't return a session.", username };
-  }
+  return { error: await startSession(result.response), username };
+}
+
+/** Copies the backend's sessionid onto our origin and lands on /home; returns an error otherwise. */
+async function startSession(response: Response | undefined) {
+  const sessionId = sessionIdFrom(response);
+  if (!sessionId) return "The server didn't return a session.";
 
   (await cookies()).set(SESSION_COOKIE, sessionId, {
     httpOnly: true,
@@ -100,6 +108,55 @@ export async function login(
   });
 
   redirect("/home");
+}
+
+export async function register(
+  _prev: LoginState,
+  formData: FormData
+): Promise<LoginState> {
+  const field = (name: string) => String(formData.get(name) ?? "").trim();
+  const username = field("username");
+  const password = String(formData.get("password") ?? "");
+
+  if (password !== String(formData.get("confirmPassword") ?? "")) {
+    return { error: "Those two passwords don't match.", username };
+  }
+
+  let result;
+  try {
+    result = await postCoreRegister({
+      body: { username, name: field("name"), email: field("email"), password },
+    });
+  } catch {
+    return { error: "Can't reach the server. Is the API running?", username };
+  }
+
+  if (result.error) {
+    console.error("register failed", result.response?.status, result.error);
+    return {
+      error: messageFrom(result.error, "Sign-up failed. Please try again."),
+      username,
+    };
+  }
+
+  return { error: await startSession(result.response), username };
+}
+
+/** Called from the Google button's callback with the ID token (credential) Google hands the browser. */
+export async function googleLogin(idToken: string): Promise<string> {
+  let result;
+  try {
+    result = await postCoreGoogle({ body: { id_token: idToken } });
+  } catch {
+    return "Can't reach the server. Is the API running?";
+  }
+
+  if (result.error) {
+    console.error("google login failed", result.response?.status, result.error);
+    return messageFrom(result.error, "Google sign-in failed. Please try again.");
+  }
+
+  return startSession(result.response);
 }
 
 export async function logout() {
