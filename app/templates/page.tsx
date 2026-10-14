@@ -87,11 +87,11 @@ export default async function TemplatesPage() {
           <div className="flex h-full min-h-80 items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-lg border-2 border-dashed border-border px-8 py-14 text-center">
               <h2 className="text-2xl font-bold tracking-tighter uppercase md:text-4xl">
-                Nothing here yet
+                No templates yet
               </h2>
               <p className="mx-auto mt-4 max-w-sm text-sm text-muted-foreground md:text-base">
-                Your first template goes in the panel above. It&apos;ll show up
-                here the moment it lands.
+                Upload a design in the panel above. It appears
+                here once the upload finishes.
               </p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default async function TemplatesPage() {
             aria-label="Your templates"
             className="grid sm:grid-cols-2 xl:grid-cols-3"
           >
-            {templates.map((template, i) => (
+            {templates.map((template) => (
               <Link
                 key={template.uuid ?? template.id}
                 href={`/templates/${template.uuid}`}
@@ -112,14 +112,8 @@ export default async function TemplatesPage() {
                   className="aspect-16/10 w-full border-0 border-b-2 border-border bg-muted/40"
                 />
 
-                <div className="relative flex items-end justify-between gap-4 p-5 md:p-6">
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute -top-2 right-3 text-[4rem] leading-none font-bold text-muted select-none group-hover:text-accent-foreground/20"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="relative min-w-0">
+                <div className="flex items-end justify-between gap-4 p-5 md:p-6">
+                  <div className="min-w-0">
                     <h3 className="truncate text-2xl leading-none font-bold tracking-tighter uppercase">
                       {template.name}
                     </h3>
@@ -135,7 +129,7 @@ export default async function TemplatesPage() {
                     </p>
                   </div>
                   <ArrowUpRight
-                    className="relative size-5 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
+                    className="size-5 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
                     aria-hidden="true"
                   />
                 </div>

@@ -114,7 +114,7 @@ export function TemplateForm({
             className="mt-2 px-4 text-xs tracking-widest text-muted-foreground uppercase"
           >
             PNG, JPG or PDF, up to {MAX_UPLOAD_MB} MB
-            {template ? " — leave empty to keep the current file" : null}
+            {template ? ". Leave empty to keep the current file" : null}
           </p>
         </div>
       </fieldset>

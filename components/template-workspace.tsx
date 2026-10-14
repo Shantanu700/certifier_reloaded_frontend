@@ -572,7 +572,7 @@ export function TemplateWorkspace({
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <label className="col-span-2">
-                      <span className={LABEL}>Key — the name it&apos;s mapped by</span>
+                      <span className={LABEL}>Key: the name it&apos;s mapped by</span>
                       <input
                         type="text"
                         value={selected.key}
@@ -648,7 +648,7 @@ export function TemplateWorkspace({
                           </Button>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                          The same image prints on every certificate — it isn&apos;t
+                          The same image prints on every certificate. It isn&apos;t
                           mapped to a CSV column.
                         </p>
                       </div>
@@ -731,7 +731,7 @@ export function TemplateWorkspace({
                 <p className="border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
                   {boxes.length
                     ? "Pick a box to change its key, font or exact position. Drag to move, corners to resize, arrow keys to nudge."
-                    : "No boxes yet. Add a box for a value from your CSV, or an image that prints on every certificate — then drag it into place."}
+                    : "No boxes yet. Add a box for a value from your CSV, or an image that prints on every certificate, then drag it into place."}
                 </p>
               )}
             </section>

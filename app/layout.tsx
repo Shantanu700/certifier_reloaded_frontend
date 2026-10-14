@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Certifier",
-  description: "Issue, verify and revoke credentials.",
+  description: "Produce certificates in bulk from one design and a CSV.",
 };
 
 const themeInit = `try{if(localStorage.theme==='dark'||(!('theme' in localStorage)&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;

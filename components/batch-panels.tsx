@@ -104,7 +104,7 @@ export function MappingPanel({
   if (!batch) {
     return (
       <p className={NUDGE}>
-        Upload a CSV first — there are no columns to map yet.
+        Upload a CSV first. There are no columns to map yet.
       </p>
     );
   }
@@ -112,8 +112,8 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         This template has no text boxes, so there&apos;s nothing to map a column
-        onto. Go back to step 01 and add some. Image boxes don&apos;t appear here
-        — their image is set when you place them.
+        onto. Go back to step 01 and add some. Image boxes don&apos;t appear here,
+        because their image is set when you place them.
       </p>
     );
   }
@@ -123,7 +123,7 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         No columns came back for this CSV. The server hasn&apos;t parsed a header
-        row from it{batch.error_message ? ` — ${batch.error_message}` : ""}.
+        row from it{batch.error_message ? `: ${batch.error_message}` : ""}.
       </p>
     );
   }
@@ -153,7 +153,7 @@ export function MappingPanel({
                   defaultValue={byBox[box.key] ?? ""}
                   className={SELECT_CLASS}
                 >
-                  <option value="">— not mapped —</option>
+                  <option value="">Not mapped</option>
                   {columns.map((column) => (
                     <option key={column} value={column}>
                       {column}
@@ -334,7 +334,7 @@ export function GeneratePanel({
           {status === "mapped"
             ? "The mapping is saved. Generating stamps every row onto the template."
             : status === "pending"
-              ? "Save a mapping first — generation only runs on a mapped batch."
+              ? "Save a mapping first. Generation only runs on a mapped batch."
               : running
                 ? "Running. The bar above updates every few seconds."
                 : `This batch is ${status}.`}

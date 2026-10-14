@@ -215,7 +215,7 @@ export default async function TemplatePage({
         <div className="col-span-2">
           <dt className={META_LABEL}>Reference</dt>
           <dd className="mt-1 font-mono text-xs break-all text-muted-foreground">
-            {template.uuid ?? "—"}
+            {template.uuid ?? "Not assigned"}
           </dd>
         </div>
       </dl>

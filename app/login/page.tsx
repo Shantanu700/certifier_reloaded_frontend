@@ -106,21 +106,12 @@ export default function LoginPage() {
   return (
     <div className="flex flex-1 flex-col lg:flex-row">
       <section className="relative flex flex-col justify-between overflow-hidden border-b-2 border-border lg:w-[55%] lg:border-r-2 lg:border-b-0">
-        <div className="flex items-center justify-between p-6 md:p-10">
+        <div className="p-6 md:p-10">
           <Wordmark />
-          <span className="text-xs tracking-widest text-muted-foreground uppercase md:text-sm">
-            Demo build
-          </span>
         </div>
 
-        <div className="relative px-6 py-16 md:px-10 md:py-24">
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-8 right-4 text-[8rem] leading-none font-bold text-muted select-none md:text-[12rem]"
-          >
-            01
-          </span>
-          <h1 className="relative text-[clamp(3rem,12vw,11rem)] leading-[0.8] font-bold tracking-tighter uppercase">
+        <div className="px-6 py-16 md:px-10 md:py-24">
+          <h1 className="text-[clamp(3rem,12vw,11rem)] leading-[0.8] font-bold tracking-tighter uppercase">
             Sign
             <br />
             <span className="inline-block bg-accent px-4 py-1 text-accent-foreground">
@@ -130,8 +121,7 @@ export default function LoginPage() {
             To Issue
           </h1>
           <p className="mt-8 max-w-md text-lg leading-tight text-muted-foreground md:text-xl">
-            The certificate console. Sign in, create an account, or continue
-            with Google.
+            One design, one CSV, one certificate per row.
           </p>
         </div>
 
@@ -142,7 +132,7 @@ export default function LoginPage() {
           <ThemeToggle />
         </div>
 
-        <div className="mx-auto w-full max-w-xl space-y-10 py-12">
+        <div className="mx-auto my-auto w-full max-w-xl space-y-10 py-12">
           <form
             key={mode}
             action={isRegister ? registerAction : loginAction}
@@ -236,10 +226,6 @@ export default function LoginPage() {
             </button>
           </p>
         </div>
-
-        <p className="text-xs tracking-widest text-muted-foreground uppercase">
-          Certifier Reloaded — demo build
-        </p>
       </section>
     </div>
   );
