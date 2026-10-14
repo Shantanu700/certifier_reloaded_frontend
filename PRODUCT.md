@@ -8,83 +8,96 @@ web
 
 ## Users
 
-Primary and, so far, only confirmed user: **staff at a single organisation who issue
-certificates** — administrators, faculty, or event coordinators. They work in this app
-as a back-office production tool: produce certificates and get them to recipients.
+**Issuing staff** (confirmed, built for): administrators, faculty or event coordinators
+at whichever organisation runs the deployment. They use the app as a back-office
+production tool: they set up a certificate design and produce certificates in bulk from
+a list of recipients. Staff sign in with a username and password or with Google, and can
+register their own accounts. Each staff member's templates belong to them alone.
 
-Recipients and third-party verifiers are **not** confirmed as users of this app. Do not
-design recipient-collection or public-verification surfaces until that is established.
+**Recipients** (confirmed as future users, nothing built): the people the certificates are
+issued to. Three planned ways for them to use it:
+
+- receive their certificate by email;
+- view and download it from a dedicated page or link;
+- public verification: anyone can check that a certificate is genuine (by ID or QR code).
+
+The backend has no endpoints for any of these yet: no email delivery, no recipient
+page and no verification lookup. Don't design these screens as if they work until the
+backend contract exists. The QR code and ID scheme is undecided.
 
 ## Product Purpose
 
-Give issuing staff a console for producing an organisation's certificates.
+Certifier is an open-source tool that lets an organisation produce its own certificates
+in bulk, and later deliver them to recipients and let others verify them.
 
-What "success" means for the organisation has not been established. Do not assert a
-success metric (time saved, volume, error rate) until the user supplies one.
+What success means has **not** been established. Don't claim a success metric (time
+saved, volume, error rate) until the user provides one.
 
 ## Positioning
 
-Greenfield. The user explicitly confirmed this replaces nothing — no v1 system, no
-manual Word/PDF process, no commercial SaaS being displaced.
+A standalone, **self-hosted, open-source** project. Any organisation runs its own copy.
+It replaces no earlier system and displaces no named product.
 
-Consequently **no differentiating mechanism has been claimed yet**. Future work must not
-invent one. No "faster than", no "unlike manual processes", no automation or scale claims
-until the user establishes a real position.
+No differentiating mechanism has been claimed. Don't invent one: no "faster than", no
+"unlike manual processes", no scale or automation claims.
 
 ## Operating Context
 
-Staff-side issuance. The frontend talks to an existing, running backend that is the
-source of truth for data shapes.
+The issuance workflow as built (`/templates/[uuid]`, four-step wizard):
 
-Not yet established: the shape of the issuance workflow (single vs. batch, template
-authoring, delivery channel, approval steps), and how staff receive the recipient data
-they issue against.
+1. Upload a certificate design (image or PDF) as a template.
+2. Place text boxes and image boxes on the design (image templates only).
+3. Upload a CSV of recipients. The header row supplies the columns.
+4. Map CSV columns to boxes, set an optional pattern for output filenames, then
+   generate one certificate per row. Progress is polled. The whole batch can be exported
+   as a zip.
+
+Recipient data arrives as a CSV that staff prepare elsewhere. Approval steps, roles
+beyond "issuing staff", and delivery are not part of the workflow yet.
 
 ## Capabilities and Constraints
 
-- Frontend only. Next.js 16 App Router, React 19, Tailwind v4, shadcn (`radix-sera`
-  style, `taupe` base), Bun. See CLAUDE.md for stack conventions.
-- **A backend already exists and is running.** Data shapes, auth, and endpoints are its
-  to define. The frontend does not invent a schema it has not read.
-- Current auth in `app/actions.ts` is a hardcoded demo credential writing an unsigned
-  cookie. Placeholder, to be replaced by the real backend's auth.
-- The `/login` and `/home` copy — the Issue/Verify/Revoke cards, the stat figures — was
-  invented during scaffolding. It is **not** product truth and is not evidence that any
-  of those features exist or are in scope.
-
-Explicitly undecided: the organisation's identity, the API base URL and spec location,
-roles beyond "issuing staff", and whether recipient or verification surfaces exist at all.
+- Frontend only. Next.js 16 App Router, React 19, Tailwind v4, shadcn (`radix-sera`,
+  `taupe`), Bun. Stack and API details live in CLAUDE.md, which is authoritative.
+- **The backend is the source of truth**: Django REST, a separate repo
+  (`Shantanu700/certifier_reloaded_backend`), with a generated client in `src/client/`.
+  The frontend doesn't guess shapes the schema doesn't define.
+- Auth is real: session-based login, registration, Google sign-in.
+- Files go browser → S3 through presigned URLs and never pass through the API.
+- Built: templates, text/image box placement, CSV batches, column mapping, filename
+  patterns, generation, zip export.
+- Not built: anything recipient-facing, roles and permissions, and approval steps.
+- Undecided: the licence (no LICENSE file in this repo yet), and the QR code and ID
+  scheme for verification.
 
 ## Brand Commitments
 
-The app carries the branding of **one specific organisation, which is not KIET** and is
-not multi-tenant. The user confirmed the branding is binding; the identity itself is
-still pending.
-
-- The organisation's name, logo, colours, and any seal have **not** been supplied.
-- Do not invent them. Do not default to KIET because the committing account uses
-  `kiet.edu` — the user ruled that out directly.
-- Until assets arrive, use marks that are obviously placeholders, never a plausible-
-  looking institutional identity that could be mistaken for the real one.
+- The app's name is **Certifier** (repo name "Certifier Reloaded"). It is not an EduVverse
+  product, not KIET-branded, and not white-labelled per deployment.
+- The deploying organisation's identity appears **only on the certificates it designs**
+  (its own uploaded artwork), never in the app's own chrome.
+- No logo or mark for Certifier itself has been supplied. Don't invent one that
+  could pass for a finished identity.
 
 ## Evidence on Hand
 
-**None.** Recording this so future work does not manufacture it:
-
-- No product docs. README is the unmodified `create-next-app` default.
-- No brand assets. `public/` holds only Next.js scaffold SVGs.
-- One scaffold commit, no git remote, no issue tracker linked.
+- README describes the real workflow and setup. No users, adoption figures, testimonials
+  or case studies exist.
+- `public/` contains only Next.js scaffold SVGs. There are no brand assets.
 - `theme.md` is a visual-style brief (Kinetic Typography), not product evidence.
-- The figures on `/home` — 12,481 issued, 99.98% uptime, 37 revoked — are fabricated
-  placeholders. They must never be presented as real metrics.
+- `/home` and `/login` still contain placeholder copy from scaffolding (for example the
+  Issue/Verify/Revoke cards). It is not product truth. Never present any figure there as
+  a real metric.
 
 ## Product Principles
 
-1. **The backend owns the data.** The frontend reads the contract; it does not guess a
-   schema and it does not design around one it hasn't seen.
-2. **Staff throughput is the measure.** This is a production tool for people doing a job
-   repeatedly, not a showcase. Scanability and consistency beat expression.
-3. **Placeholders stay visibly placeholder.** Invented copy, numbers, and marks must read
-   as unfinished, so nobody ships them by accident or cites them as fact.
-4. **Nothing is asserted about the organisation until it is supplied.** No name, no
-   claim, no metric, no seal.
+1. **The backend owns the data.** Read the contract; don't design around a schema
+   that hasn't been seen, which includes every recipient-facing feature for now.
+2. **Staff throughput is the measure.** The staff side is a production tool used
+   repeatedly. Scanability and consistency beat expression.
+3. **The organisation's identity lives on its certificates, not in the app.** Certifier
+   stays neutral so any self-hosting organisation can use it as-is.
+4. **Placeholders stay visibly placeholder.** Invented copy, numbers and marks must read
+   as unfinished, so nobody ships or cites them as fact.
+5. **Recipient surfaces must be trustworthy.** When verification is built, it has to
+   state only what the backend can prove about a certificate.
