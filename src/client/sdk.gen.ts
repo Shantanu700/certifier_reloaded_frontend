@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCoreLoginData, DeleteCoreLoginErrors, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
+import type { DeleteCanvaConnectionData, DeleteCanvaConnectionErrors, DeleteCanvaConnectionResponses, DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateBatchesResponses, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateBoxesResponses, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCertificateTemplateImageBoxesResponses, DeleteCertificateTemplateResponses, DeleteCoreLoginData, DeleteCoreLoginErrors, DeleteCoreLoginResponses, GetCanvaConnectData, GetCanvaConnectErrors, GetCanvaConnectResponses, GetCanvaDesignsData, GetCanvaDesignsErrors, GetCanvaDesignsResponses, GetCanvaStatusData, GetCanvaStatusErrors, GetCanvaStatusResponses, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCanvaCallbackData, PostCanvaCallbackErrors, PostCanvaCallbackResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateCanvaSyncData, PostCertificateTemplateCanvaSyncErrors, PostCertificateTemplateCanvaSyncResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateImportCanvaData, PostCertificateTemplateImportCanvaErrors, PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,9 +19,78 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * Finish connecting: exchange the code Canva redirected back with
+ */
+export const postCanvaCallback = <ThrowOnError extends boolean = false>(options: Options<PostCanvaCallbackData, ThrowOnError>): RequestResult<PostCanvaCallbackResponses, PostCanvaCallbackErrors, ThrowOnError> => (options.client ?? client).post<PostCanvaCallbackResponses, PostCanvaCallbackErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/canva/callback/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Start connecting the user's Canva account
+ */
+export const getCanvaConnect = <ThrowOnError extends boolean = false>(options?: Options<GetCanvaConnectData, ThrowOnError>): RequestResult<GetCanvaConnectResponses, GetCanvaConnectErrors, ThrowOnError> => (options?.client ?? client).get<GetCanvaConnectResponses, GetCanvaConnectErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/canva/connect/',
+    ...options
+});
+
+/**
+ * Disconnect the user's Canva account
+ */
+export const deleteCanvaConnection = <ThrowOnError extends boolean = false>(options?: Options<DeleteCanvaConnectionData, ThrowOnError>): RequestResult<DeleteCanvaConnectionResponses, DeleteCanvaConnectionErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteCanvaConnectionResponses, DeleteCanvaConnectionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/canva/connection/',
+    ...options
+});
+
+/**
+ * List or search the user's Canva designs
+ */
+export const getCanvaDesigns = <ThrowOnError extends boolean = false>(options?: Options<GetCanvaDesignsData, ThrowOnError>): RequestResult<GetCanvaDesignsResponses, GetCanvaDesignsErrors, ThrowOnError> => (options?.client ?? client).get<GetCanvaDesignsResponses, GetCanvaDesignsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/canva/designs/',
+    ...options
+});
+
+/**
+ * Whether the user has a Canva account connected
+ */
+export const getCanvaStatus = <ThrowOnError extends boolean = false>(options?: Options<GetCanvaStatusData, ThrowOnError>): RequestResult<GetCanvaStatusResponses, GetCanvaStatusErrors, ThrowOnError> => (options?.client ?? client).get<GetCanvaStatusResponses, GetCanvaStatusErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/canva/status/',
+    ...options
+});
+
+/**
  * Retrieve & Delete a single Certificate Batch
  */
-export const deleteCertificateBatches = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateBatchesData, ThrowOnError>): RequestResult<unknown, DeleteCertificateBatchesErrors, ThrowOnError> => (options.client ?? client).delete<unknown, DeleteCertificateBatchesErrors, ThrowOnError>({
+export const deleteCertificateBatches = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateBatchesData, ThrowOnError>): RequestResult<DeleteCertificateBatchesResponses, DeleteCertificateBatchesErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCertificateBatchesResponses, DeleteCertificateBatchesErrors, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: 'sessionid',
@@ -236,7 +305,7 @@ export const postCertificateTemplateBoxes = <ThrowOnError extends boolean = fals
 /**
  * Retrieve, Update & Delete a single Template Box
  */
-export const deleteCertificateTemplateBoxes = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateBoxesData, ThrowOnError>): RequestResult<unknown, DeleteCertificateTemplateBoxesErrors, ThrowOnError> => (options.client ?? client).delete<unknown, DeleteCertificateTemplateBoxesErrors, ThrowOnError>({
+export const deleteCertificateTemplateBoxes = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateBoxesData, ThrowOnError>): RequestResult<DeleteCertificateTemplateBoxesResponses, DeleteCertificateTemplateBoxesErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCertificateTemplateBoxesResponses, DeleteCertificateTemplateBoxesErrors, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: 'sessionid',
@@ -309,7 +378,7 @@ export const postCertificateTemplateImageBoxes = <ThrowOnError extends boolean =
 /**
  * Retrieve, Update & Delete a single Template Image Box
  */
-export const deleteCertificateTemplateImageBoxes = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateImageBoxesData, ThrowOnError>): RequestResult<unknown, DeleteCertificateTemplateImageBoxesErrors, ThrowOnError> => (options.client ?? client).delete<unknown, DeleteCertificateTemplateImageBoxesErrors, ThrowOnError>({
+export const deleteCertificateTemplateImageBoxes = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateImageBoxesData, ThrowOnError>): RequestResult<DeleteCertificateTemplateImageBoxesResponses, DeleteCertificateTemplateImageBoxesErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCertificateTemplateImageBoxesResponses, DeleteCertificateTemplateImageBoxesErrors, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: 'sessionid',
@@ -352,7 +421,7 @@ export const putCertificateTemplateImageBoxes = <ThrowOnError extends boolean = 
 /**
  * Retrieve, Update & Delete a single Certificate Template
  */
-export const deleteCertificateTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateData, ThrowOnError>): RequestResult<unknown, DeleteCertificateTemplateErrors, ThrowOnError> => (options.client ?? client).delete<unknown, DeleteCertificateTemplateErrors, ThrowOnError>({
+export const deleteCertificateTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificateTemplateData, ThrowOnError>): RequestResult<DeleteCertificateTemplateResponses, DeleteCertificateTemplateErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCertificateTemplateResponses, DeleteCertificateTemplateErrors, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: 'sessionid',
@@ -393,6 +462,36 @@ export const putCertificateTemplate = <ThrowOnError extends boolean = false>(opt
 });
 
 /**
+ * Re-export a Canva-imported Certificate Template's design page and replace its file
+ */
+export const postCertificateTemplateCanvaSync = <ThrowOnError extends boolean = false>(options: Options<PostCertificateTemplateCanvaSyncData, ThrowOnError>): RequestResult<PostCertificateTemplateCanvaSyncResponses, PostCertificateTemplateCanvaSyncErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateTemplateCanvaSyncResponses, PostCertificateTemplateCanvaSyncErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-template/{uuid}/canva-sync/',
+    ...options
+});
+
+/**
+ * Import one page of a Canva design as a new Certificate Template
+ */
+export const postCertificateTemplateImportCanva = <ThrowOnError extends boolean = false>(options: Options<PostCertificateTemplateImportCanvaData, ThrowOnError>): RequestResult<PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateImportCanvaErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateImportCanvaErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-template/import-canva/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Google Login/Sign Up API View
  */
 export const postCoreGoogle = <ThrowOnError extends boolean = false>(options: Options<PostCoreGoogleData, ThrowOnError>): RequestResult<PostCoreGoogleResponses, PostCoreGoogleErrors, ThrowOnError> => (options.client ?? client).post<PostCoreGoogleResponses, PostCoreGoogleErrors, ThrowOnError>({
@@ -407,7 +506,7 @@ export const postCoreGoogle = <ThrowOnError extends boolean = false>(options: Op
 /**
  * Login/Logout API View
  */
-export const deleteCoreLogin = <ThrowOnError extends boolean = false>(options?: Options<DeleteCoreLoginData, ThrowOnError>): RequestResult<unknown, DeleteCoreLoginErrors, ThrowOnError> => (options?.client ?? client).delete<unknown, DeleteCoreLoginErrors, ThrowOnError>({
+export const deleteCoreLogin = <ThrowOnError extends boolean = false>(options?: Options<DeleteCoreLoginData, ThrowOnError>): RequestResult<DeleteCoreLoginResponses, DeleteCoreLoginErrors, ThrowOnError> => (options?.client ?? client).delete<DeleteCoreLoginResponses, DeleteCoreLoginErrors, ThrowOnError>({
     security: [{
             in: 'cookie',
             name: 'sessionid',
