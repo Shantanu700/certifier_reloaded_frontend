@@ -194,17 +194,19 @@ function pageHref(
 }
 
 const PAGER_LINK =
-  "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3.5 hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
+  "inline-flex items-center self-stretch px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3.5 hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
 
 /** Previous / Next links for any paginated list; `href` builds the URL for a given page number. */
 export function Pager({
   page,
   href,
   label,
+  className,
 }: {
   page: PageInfo;
   href: (page: number) => string;
   label: string;
+  className?: string;
 }) {
   const ends = [
     { label: "Previous", to: page.page - 1, enabled: page.hasPrev },
@@ -214,7 +216,7 @@ export function Pager({
   return (
     <nav
       aria-label={label}
-      className="mt-4 flex items-center justify-between gap-3 border-2 border-border"
+      className={cn("mt-4 flex items-center justify-between gap-3 border-2 border-border", className)}
     >
       {ends.map(({ label, to, enabled }, i) =>
         enabled ? (
@@ -305,6 +307,14 @@ export function GeneratePanel({
   const exportStatus = batch.export_status ?? "pending";
   const total = batch.total_rows ?? 0;
   const failures = certificates.filter((c) => c.is_successful === false).length;
+  // The first mapped column (usually the recipient's name) labels each row, so
+  // staff can tell whose certificate it is without counting CSV lines.
+  const labelColumn = Object.values(asMapping(batch.mapping))[0];
+  const rowLabel = (cert: GeneratedCertificate) => {
+    const data = cert.row_data as Record<string, unknown> | undefined;
+    const value = labelColumn ? data?.[labelColumn] : undefined;
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  };
 
   return (
     <section className="space-y-8">
@@ -333,7 +343,7 @@ export function GeneratePanel({
 
         <p className="text-sm text-muted-foreground">
           {status === "mapped"
-            ? "The mapping is saved. Generating stamps every row onto the template."
+            ? "The mapping is saved. Generating makes one certificate for every row."
             : status === "pending"
               ? "Save a mapping first. Generation only runs on a mapped batch."
               : running
@@ -358,8 +368,10 @@ export function GeneratePanel({
       <div className="border-t-2 border-border pt-6">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
           <h3 className={HEADING}>
-            Certificates{page?.count ? ` · ${page.count}` : null}
-            {failures ? ` · ${failures} failed on this page` : null}
+            Certificates{page?.count ? ` (${page.count})` : null}
+            {failures ? (
+              <span className="text-destructive">, {failures} failed on this page</span>
+            ) : null}
           </h3>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             {exportStatus === "completed" ||
@@ -414,9 +426,15 @@ export function GeneratePanel({
                   className="flex items-center justify-between gap-4 bg-background px-4 py-3"
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm font-bold tracking-tight">
-                      Row {cert.row_index}
+                    {/* row_index is 0-based from the first recipient; people count from 1. */}
+                    <span className="block truncate text-sm font-bold tracking-tight">
+                      {rowLabel(cert) ?? `Row ${cert.row_index + 1}`}
                     </span>
+                    {rowLabel(cert) ? (
+                      <span className="mt-0.5 block font-mono text-[0.6875rem] text-muted-foreground">
+                        Row {cert.row_index + 1}
+                      </span>
+                    ) : null}
                     {cert.is_successful === false ? (
                       <span className="mt-1 block text-[0.6875rem] tracking-widest text-destructive uppercase">
                         {cert.error_message || "Failed"}

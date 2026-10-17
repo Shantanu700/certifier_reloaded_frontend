@@ -9,8 +9,10 @@ import {
   type CSSProperties,
 } from "react";
 import { Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
+import { Loader } from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import {
   ALIGNMENTS,
@@ -146,7 +148,6 @@ export function TemplateWorkspace({
   const [selectedId, setSelectedId] = useState<number | null>(
     initialBoxes.length || initialImageBoxes.length ? 0 : null
   );
-  const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   const [natural, setNatural] = useState<Bounds | null>(null);
@@ -206,7 +207,7 @@ export function TemplateWorkspace({
       if (image) {
         const uploaded = await uploadFile(image, "image_box");
         if ("error" in uploaded) {
-          setError(uploaded.error);
+          toast.error(uploaded.error);
           return;
         }
         upload = uploaded.upload;
@@ -216,10 +217,9 @@ export function TemplateWorkspace({
           ? await saveImageBox(templateUuid, toImageDraft(box), upload)
           : await saveBox(templateUuid, toDraft(box));
       if ("error" in result) {
-        setError(result.error);
+        toast.error(result.error);
         return;
       }
-      setError(null);
       patch(id, {
         uuid: result.box.uuid,
         ...("imageUrl" in result ? { imageUrl: result.imageUrl } : {}),
@@ -282,7 +282,7 @@ export function TemplateWorkspace({
   const defaultRect = (): Rect | null => {
     const image = natural ?? measureImage();
     if (!image) {
-      setError("The template image hasn't loaded yet. Try again in a moment.");
+      toast.error("The template image hasn't loaded yet. Try again in a moment.");
       return null;
     }
     const width = Math.max(16, Math.round(image.width * 0.4));
@@ -312,12 +312,11 @@ export function TemplateWorkspace({
     startTransition(async () => {
       const result = await saveBox(templateUuid, toDraft(box));
       if ("error" in result) {
-        setError(result.error);
+        toast.error(result.error);
         setBoxes((all) => all.filter((b) => b.id !== id));
         setSelectedId(null);
         return;
       }
-      setError(null);
       patch(id, { uuid: result.box.uuid });
     });
   };
@@ -337,7 +336,7 @@ export function TemplateWorkspace({
     setSelectedId(id);
     startTransition(async () => {
       const rollback = (message: string) => {
-        setError(message);
+        toast.error(message);
         setBoxes((all) => all.filter((b) => b.id !== id));
         setSelectedId(null);
       };
@@ -353,7 +352,6 @@ export function TemplateWorkspace({
         rollback(result.error);
         return;
       }
-      setError(null);
       patch(id, { uuid: result.box.uuid, imageUrl: result.imageUrl });
     });
   };
@@ -369,7 +367,7 @@ export function TemplateWorkspace({
           ? await deleteImageBox(templateUuid, uuid)
           : await deleteBox(templateUuid, uuid);
       if (result) {
-        setError(result.error);
+        toast.error(result.error);
         setBoxes((all) => [...all, box].sort((a, b) => a.id - b.id));
       }
     });
@@ -500,8 +498,14 @@ export function TemplateWorkspace({
           {editing ? (
             <section className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                  Boxes{pending ? " · Saving…" : null}
+                <h3 className="flex items-center gap-2 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                  Boxes
+                  {pending ? (
+                    <>
+                      <Loader size="12px" />
+                      <span>Saving…</span>
+                    </>
+                  ) : null}
                 </h3>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button type="button" size="sm" variant="outline" onClick={addBox}>
@@ -527,13 +531,6 @@ export function TemplateWorkspace({
                 </div>
               </div>
 
-              {error ? (
-                <p role="alert">
-                  <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
-                    {error}
-                  </span>
-                </p>
-              ) : null}
 
               {boxes.length ? (
                 <ul className="grid gap-px bg-border">

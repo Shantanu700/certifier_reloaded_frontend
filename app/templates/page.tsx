@@ -22,7 +22,7 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
 };
 
 // A multiple of the grid's 2 and 3 columns, so full pages have no ragged last row.
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 6;
 
 const listHref = (q: string, page: number) => {
   const params = new URLSearchParams({ ...(q && { q }), ...(page > 1 && { page: String(page) }) });
@@ -62,7 +62,7 @@ export default async function TemplatesPage({
       };
     }
   } catch {
-    loadError = "Can't reach the server. Is the API running?";
+    loadError = "Can't reach the server. Try again in a moment.";
   }
   if (outOfRange) redirect(listHref(q, 1));
 
@@ -93,18 +93,9 @@ export default async function TemplatesPage({
         </div>
 
         <div className="border-t-2 border-border px-6 py-8 md:px-10 lg:border-t-0 lg:border-l-2">
-          <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-              New template
-            </h2>
-            <Link
-              href="/templates/canva"
-              className="tap inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
-              Or import from Canva
-              <ArrowUpRight className="size-3.5" aria-hidden="true" />
-            </Link>
-          </div>
+          <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+            New template
+          </h2>
           <div className="mt-5">
             <TemplateForm
               row
@@ -112,6 +103,26 @@ export default async function TemplatesPage({
               idPrefix="upload"
               submitLabel="Upload"
               pendingLabel="Uploading…"
+              secondary={
+                <Button
+                  asChild
+                  variant="outline"
+                  className="h-14 w-full gap-3 border-2 border-foreground text-base tracking-tighter hover:bg-foreground hover:text-background dark:hover:bg-foreground"
+                >
+                  <Link href="/templates/canva">
+                    {/* The mark is a black disc: inverted in dark mode, and again
+                        while the hover fill flips the button to foreground. */}
+                    <img
+                      src="/canva-icon.png"
+                      alt=""
+                      width={24}
+                      height={24}
+                      className="size-6 group-hover/button:invert dark:invert dark:group-hover/button:invert-0"
+                    />
+                    Import from Canva
+                  </Link>
+                </Button>
+              }
             />
           </div>
         </div>
@@ -123,7 +134,7 @@ export default async function TemplatesPage({
           role="search"
           className="flex flex-wrap items-end gap-3 border-b-2 border-border px-6 py-4 md:px-10"
         >
-          <div className="min-w-0 flex-1 sm:max-w-sm">
+          <div className="min-w-0 basis-full sm:max-w-sm sm:flex-1 sm:basis-0">
             <label
               htmlFor="template-search"
               className="block text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase"
@@ -140,17 +151,25 @@ export default async function TemplatesPage({
               className="mt-1 h-11 w-full border-b-2 border-border bg-transparent px-2 text-base font-bold tracking-tight outline-none focus:border-accent"
             />
           </div>
-          <Button type="submit" className="h-11 gap-2 px-6">
+          <Button type="submit" variant="outline" className="h-11 gap-2 border-2 px-6">
             <Search className="size-4" aria-hidden="true" />
             Search
           </Button>
           {q ? (
             <Link
               href="/templates"
-              className="tap self-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="tap inline-flex h-11 items-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              Clear
+              Clear search
             </Link>
+          ) : null}
+          {page && (page.hasPrev || page.hasNext) ? (
+            <Pager
+              page={page}
+              href={(to) => listHref(q, to)}
+              label="Template pages"
+              className="mt-0 ml-auto h-11"
+            />
           ) : null}
         </form>
 
@@ -166,7 +185,7 @@ export default async function TemplatesPage({
           <p className="px-6 py-10 text-sm text-muted-foreground md:px-10">
             No templates match “{q}”.{" "}
             <Link href="/templates" className="font-bold text-foreground underline underline-offset-4">
-              Show all templates
+              Clear search
             </Link>
           </p>
         ) : templates.length === 0 ? (
@@ -190,7 +209,7 @@ export default async function TemplatesPage({
               <Link
                 key={template.uuid ?? template.id}
                 href={`/templates/${template.uuid}`}
-                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent"
+                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent"
               >
                 <TemplatePreview
                   file={template.file}
@@ -223,12 +242,6 @@ export default async function TemplatesPage({
             ))}
           </section>
         )}
-
-        {page && (page.hasPrev || page.hasNext) ? (
-          <div className="px-6 py-6 md:px-10">
-            <Pager page={page} href={(to) => listHref(q, to)} label="Template pages" />
-          </div>
-        ) : null}
       </div>
     </div>
   );

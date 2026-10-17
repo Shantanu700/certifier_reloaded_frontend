@@ -80,7 +80,7 @@ export function CanvaQualitySlider({
             aria-pressed={width === p.width}
             onClick={() => setWidth(p.width)}
             className={cn(
-              "flex-1 border-2 px-2 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              "flex-1 border-2 px-2 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
               width === p.width
                 ? "border-accent bg-accent text-accent-foreground"
                 : "border-border hover:bg-muted"

@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, type ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
 import type { TemplateState } from "@/app/actions";
+import { Loader } from "@/components/loader";
 import { Button } from "@/components/ui/button";
 import { uploadFile } from "@/lib/upload-client";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_MB } from "@/lib/uploads";
@@ -28,13 +29,17 @@ export function TemplateForm({
   pendingLabel,
   idPrefix,
   row = false,
+  secondary,
 }: {
   action: (state: TemplateState, formData: FormData) => Promise<TemplateState>;
   template?: CertificateTemplate;
   submitLabel: string;
   pendingLabel: string;
   idPrefix: string;
+  /** Inline layout for a page section: fields and actions sit side by side when there's room. */
   row?: boolean;
+  /** A second action shown beside the submit button in `row` layout (e.g. a link elsewhere). */
+  secondary?: ReactNode;
 }) {
   // The file goes straight to S3 from here; the action only ever sees the uuid.
   const [state, formAction, pending] = useActionState(
@@ -53,9 +58,14 @@ export function TemplateForm({
   const [oversize, setOversize] = useState<string | null>(null);
   const failed = state && "error" in state;
   const statusId = `${idPrefix}-status`;
+  // The modal indents labels to sit over the field text; a panel aligns them
+  // flush with its own heading instead. twMerge lets px-0 win over px-4.
+  const flush = row ? "px-0" : undefined;
 
+  // `row` makes the form a container, so fields and buttons pair up only when
+  // the section is wide enough for both labels on one line (narrow at lg, 1024px).
   return (
-    <form action={formAction} className={row ? "space-y-4" : "space-y-8"}>
+    <form action={formAction} className={row ? "@container space-y-5" : "space-y-8"}>
       {template ? (
         <input type="hidden" name="uuid" value={template.uuid ?? ""} />
       ) : null}
@@ -64,12 +74,12 @@ export function TemplateForm({
         disabled={pending}
         className={
           row
-            ? "grid gap-5 disabled:opacity-60 sm:grid-cols-2"
+            ? "grid gap-5 disabled:opacity-60 @[34rem]:grid-cols-2"
             : "space-y-6 disabled:opacity-60"
         }
       >
         <div>
-          <label htmlFor={`${idPrefix}-name`} className={LABEL_CLASS}>
+          <label htmlFor={`${idPrefix}-name`} className={cn(LABEL_CLASS, flush)}>
             Template name
           </label>
           <input
@@ -83,12 +93,12 @@ export function TemplateForm({
             placeholder="Workshop completion"
             aria-invalid={failed ? true : undefined}
             aria-describedby={state ? statusId : undefined}
-            className={FIELD_CLASS}
+            className={cn(FIELD_CLASS, flush)}
           />
         </div>
 
         <div>
-          <label htmlFor={`${idPrefix}-file`} className={LABEL_CLASS}>
+          <label htmlFor={`${idPrefix}-file`} className={cn(LABEL_CLASS, flush)}>
             {template ? "Replace file" : "Template file"}
           </label>
           <input
@@ -99,7 +109,7 @@ export function TemplateForm({
             required={!template}
             aria-invalid={oversize ? true : undefined}
             aria-describedby={`${idPrefix}-file-hint`}
-            className={FILE_CLASS}
+            className={cn(FILE_CLASS, flush)}
             onChange={(e) => {
               const picked = e.currentTarget.files?.[0];
               setOversize(
@@ -111,7 +121,7 @@ export function TemplateForm({
           />
           <p
             id={`${idPrefix}-file-hint`}
-            className="mt-2 px-4 text-xs tracking-widest text-muted-foreground uppercase"
+            className={cn("mt-2 px-4 text-xs tracking-widest text-muted-foreground uppercase", flush)}
           >
             PNG, JPG or PDF, up to {MAX_UPLOAD_MB} MB
             {template ? ". Leave empty to keep the current file" : null}
@@ -121,12 +131,10 @@ export function TemplateForm({
 
       <div
         className={
-          row
-            ? "flex flex-wrap items-center justify-between gap-4"
-            : "space-y-8"
+          row ? "space-y-3" : "space-y-8"
         }
       >
-        <p id={statusId} aria-live="polite" className="min-h-8 px-4 empty:min-h-0">
+        <p id={statusId} aria-live="polite" className={cn("min-h-8 px-4 empty:min-h-0", flush)}>
           {oversize ? (
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
               {oversize}
@@ -137,25 +145,20 @@ export function TemplateForm({
               {state.error}
             </span>
           ) : null}
-          {!oversize && state && "saved" in state ? (
-            <span className="inline-block bg-accent px-3 py-1.5 text-sm font-bold tracking-widest text-accent-foreground uppercase">
-              Saved
-            </span>
-          ) : null}
         </p>
 
-        <Button
-          type="submit"
-          disabled={pending || oversize !== null}
-          aria-busy={pending}
-          className={cn(
-            "h-14 gap-3 text-base tracking-tighter transition-transform hover:scale-[1.02] active:scale-95",
-            row ? "px-10" : "w-full"
-          )}
-        >
-          {pending ? pendingLabel : submitLabel}
-          <ArrowRight className="size-5" aria-hidden="true" />
-        </Button>
+        <div className={row ? "grid gap-3 @[34rem]:grid-cols-2" : undefined}>
+          <Button
+            type="submit"
+            disabled={pending || oversize !== null}
+            aria-busy={pending}
+            className="h-14 w-full gap-3 text-base tracking-tighter"
+          >
+            {pending ? pendingLabel : submitLabel}
+            {pending ? <Loader /> : <ArrowRight className="size-5" aria-hidden="true" />}
+          </Button>
+          {row ? secondary : null}
+        </div>
       </div>
     </form>
   );

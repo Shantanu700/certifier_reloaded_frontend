@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { Space_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { FlashToaster } from "@/components/flash-toaster";
+import { FLASH_COOKIE, parseFlash } from "@/lib/flash";
 import { cn } from "@/lib/utils";
 
 const spaceGrotesk = Space_Grotesk({
@@ -21,7 +24,10 @@ export const metadata: Metadata = {
 
 const themeInit = `try{if(localStorage.theme==='dark'||(!('theme' in localStorage)&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}`;
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Reading a cookie here makes every route dynamic; they all read the session anyway.
+  const flash = parseFlash((await cookies()).get(FLASH_COOKIE)?.value);
+
   return (
     <html
       lang="en"
@@ -31,7 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <FlashToaster flash={flash} />
+      </body>
     </html>
   );
 }

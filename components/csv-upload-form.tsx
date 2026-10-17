@@ -13,8 +13,8 @@ const LABEL =
 
 /**
  * Client component because the CSV now goes browser → S3 before the API ever
- * hears about it. Server-side failures still arrive as `?error=` from
- * uploadBatch's redirect; only the upload leg needs local state.
+ * hears about it. Server-side failures arrive as an error toast from
+ * uploadBatch (lib/flash.ts); only the upload leg needs local state.
  */
 export function CsvUploadForm({ templateUuid }: { templateUuid: string }) {
   const [error, setError] = useState<string | null>(null);

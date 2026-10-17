@@ -162,6 +162,38 @@ from `@/src/client/client.gen`. The dev cert is self-signed, so both `dev` and `
 `NODE_TLS_REJECT_UNAUTHORIZED=0` — drop that the moment the cert is trusted, and
 never carry it into `build`/`start`.
 
+**Toasts** (`sonner` via `components/ui/sonner.tsx`, mounted once in `app/layout.tsx`):
+
+- Server actions that end in `redirect()` report outcomes with `flash()`/`fail()`
+  in `app/actions.ts`: a one-shot `flash` cookie (`lib/flash.ts`). Setting a cookie
+  in a server action re-renders the layouts, so the root layout reads it and
+  `<FlashToaster>` shows it once and clears it. Don't go back to `?error=` /
+  `?notice=` params, and call `fail()` as `return fail(...)` so TypeScript narrows.
+- Client components that get a result back call `toast.*` from `sonner` directly
+  (box saves in the editor, generation/export finishing in `batch-progress.tsx`).
+- Sign-in and sign-up toast their errors (the fields keep a red underline via
+  `aria-invalid`) and land on /home with a welcome toast. Other form validation
+  stays inline next to the field (template form, CSV pick), and so do page-load
+  failures. Toasts are for one-off outcomes.
+- Styling is token-only, so it follows `.dark` without `next-themes`. Success is an
+  accent fill, info an inverted fill, warning a destructive outline, error a
+  destructive fill. The accent is never a text colour.
+
+**Motion** (CSS only, no motion library; tokens and classes in `app/globals.css`):
+
+- `ease-out` / `ease-in-out` are overridden in `@theme` with the strong curves, so
+  every Tailwind easing utility already uses them. Don't add a parallel scale.
+- Press feedback lives in `Button` (`active:scale-[0.97]`, 150ms). Don't add
+  per-button `hover:scale` / `active:scale`.
+- Loading is the stepping-squares `.loader` via `components/loader.tsx`, in
+  currentColor, sized in multiples of 6px (12 / 18 / 60). `app/loading.tsx` and
+  `app/templates/loading.tsx` cover new-page navigations; Next does *not* show them
+  for search-param changes, so step tabs (`StepLink`) and submit buttons
+  (`SubmitButton`) carry their own inline loader.
+- Deliberately not animated: route/step transitions (tens a day), box drag and
+  resize (direct manipulation), keyboard nudges, the template grid. The login
+  poster is the one staggered entrance. Everything has a reduced-motion variant.
+
 ## Design system
 
 The visual language is **Kinetic Typography** (spec in `theme.md`), applied through
