@@ -229,7 +229,8 @@ export default async function TemplatePage({
           <h3 className={RAIL_HEADING}>From Canva</h3>
           <p className="mt-4 text-sm text-muted-foreground">
             Re-export page {template.canva_page ?? 1} of the Canva design after editing
-            it there. Boxes stay where they are, so the design&apos;s size must not change.
+            it there. Placed boxes stay where they are, so the design&apos;s size must not
+            change. A template with no boxes yet is re-exported at full print quality.
           </p>
           <input type="hidden" name="uuid" value={templateUuid} />
           <SubmitButton
