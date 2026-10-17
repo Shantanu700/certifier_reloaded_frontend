@@ -30,7 +30,7 @@ export default async function TemplatesPage() {
     if (result.error) loadError = "The server couldn't return your templates.";
     templates = asList<CertificateTemplate>(result.data);
   } catch {
-    loadError = "Can't reach the server. Is the API running?";
+    loadError = "Can't reach the server. Try again in a moment.";
   }
 
   return (

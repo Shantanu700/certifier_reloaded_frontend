@@ -58,7 +58,7 @@ export default async function CanvaImportPage({
       if (page.error) connected = (await getCanvaStatus({ headers })).data?.connected ?? false;
     }
   } catch {
-    loadError = "Can't reach the server. Is the API running?";
+    loadError = "Can't reach the server. Try again in a moment.";
   }
 
   const here = `/templates/canva${q || after ? `?${new URLSearchParams({ ...(q && { q }), ...(after && { after }) })}` : ""}`;

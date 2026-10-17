@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
         message = typeof msg === "string" ? msg : "Couldn't connect Canva. Try again.";
       }
     } catch {
-      message = "Can't reach the server. Is the API running?";
+      message = "Can't reach the server. Try again in a moment.";
     }
   }
 

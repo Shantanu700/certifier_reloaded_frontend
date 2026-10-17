@@ -86,7 +86,7 @@ export async function login(
       },
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?", username };
+    return { error: "Can't reach the server. Try again in a moment.", username };
   }
 
   if (result.error) {
@@ -133,7 +133,7 @@ export async function register(
       body: { username, name: field("name"), email: field("email"), password },
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?", username };
+    return { error: "Can't reach the server. Try again in a moment.", username };
   }
 
   if (result.error) {
@@ -153,7 +153,7 @@ export async function googleLogin(idToken: string): Promise<string> {
   try {
     result = await postCoreGoogle({ body: { id_token: idToken } });
   } catch {
-    return "Can't reach the server. Is the API running?";
+    return "Can't reach the server. Try again in a moment.";
   }
 
   if (result.error) {
@@ -194,7 +194,7 @@ export async function presignUpload(
   try {
     result = await postCoreUploadUrl({ body, headers: sessionHeader(sessionId) });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -223,7 +223,7 @@ export async function uploadTemplate(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data?.uuid) {
@@ -255,7 +255,7 @@ export async function updateTemplate(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -281,7 +281,7 @@ export async function deleteTemplate(formData: FormData) {
     });
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {
@@ -309,7 +309,7 @@ export async function connectCanva() {
     url = result.data?.authorize_url;
     if (result.error) message = messageFrom(result.error, message);
   } catch {
-    message = "Can't reach the server. Is the API running?";
+    message = "Can't reach the server. Try again in a moment.";
   }
 
   redirect(url ?? withError(CANVA_PAGE, message));
@@ -322,7 +322,7 @@ export async function disconnectCanva() {
   try {
     error = (await deleteCanvaConnection({ headers: sessionHeader(sessionId) })).error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) redirect(withError(CANVA_PAGE, messageFrom(error, "Couldn't disconnect Canva.")));
@@ -354,7 +354,7 @@ export async function importCanvaDesign(formData: FormData) {
     imported = result.data;
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   const uuid = imported?.template.uuid;
@@ -388,7 +388,7 @@ export async function syncFromCanva(formData: FormData) {
       })
     ).error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {
@@ -454,7 +454,7 @@ export async function saveBox(
           headers: sessionHeader(sessionId),
         });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -479,7 +479,7 @@ export async function deleteBox(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -522,7 +522,7 @@ export async function saveImageBox(
           headers: sessionHeader(sessionId),
         });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -547,7 +547,7 @@ export async function deleteImageBox(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -583,7 +583,7 @@ export async function uploadBatch(templateUuid: string, upload: string) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error || !result.data?.uuid) {
@@ -616,7 +616,7 @@ export async function saveMapping(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
@@ -651,7 +651,7 @@ export async function saveNaming(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
@@ -677,7 +677,7 @@ export async function generateBatch(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
@@ -716,7 +716,7 @@ export async function exportBatch(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
@@ -756,7 +756,7 @@ export async function deleteBatch(formData: FormData) {
     });
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {

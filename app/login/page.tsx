@@ -203,7 +203,7 @@ export default function LoginPage() {
             >
               {pending
                 ? isRegister ? "Creating account…" : "Signing in…"
-                : isRegister ? "Create Account" : "Enter Console"}
+                : isRegister ? "Create account" : "Sign in"}
               <ArrowRight className="size-5" aria-hidden="true" />
             </Button>
           </form>
