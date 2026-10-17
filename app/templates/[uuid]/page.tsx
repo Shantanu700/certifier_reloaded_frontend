@@ -138,8 +138,12 @@ export default async function TemplatePage({
       selectedBatch?.uuid ? `&batch=${selectedBatch.uuid}` : ""
     }`;
 
+  // The key is not decoration: this element crosses into a client component as a
+  // prop, and when the RSC payload delivers it as a lazy chunk React can miss the
+  // static-child check and warn "Each child in a list should have a unique key".
   const tabs = (
     <nav
+      key="steps"
       aria-label="Steps"
       className="grid shrink-0 grid-cols-2 gap-px border-b-2 border-border bg-border sm:grid-cols-4"
     >
