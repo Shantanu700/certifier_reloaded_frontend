@@ -4,6 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Motion tokens. Overriding Tailwind's own names makes every `ease-out` /
+   `ease-in-out` utility use the strong curves; the built-ins are too weak. */
+@theme {
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -165,5 +172,120 @@
       position: absolute;
       inset: -0.75rem -0.25rem;
     }
+  }
+}
+
+/* Stepping-squares loader. Drawn in currentColor so it takes the theme (or the
+   button's text colour), and sized by --loader-size: every offset is a sixth of
+   it, so the same motion works from an inline 14px up to the 60px page loader. */
+.loader {
+  --loader-size: 18px;
+  --u: calc(var(--loader-size) / 6);
+  --g: conic-gradient(from -90deg at var(--u) var(--u), currentColor 90deg, #0000 0);
+  display: inline-block;
+  flex-shrink: 0;
+  width: var(--loader-size);
+  aspect-ratio: 1;
+  background: var(--g), var(--g), var(--g);
+  background-size: 50% 50%;
+  animation: loader-step 1s infinite;
+}
+@keyframes loader-step {
+  0%   { background-position: 0 0, var(--u) var(--u), calc(var(--u) * 2) calc(var(--u) * 2); }
+  33%  { background-position: calc(var(--u) * -3) 0, var(--u) var(--u), calc(var(--u) * 2) calc(var(--u) * 2); }
+  66%  { background-position: calc(var(--u) * -3) 0, calc(var(--u) * -2) var(--u), calc(var(--u) * 2) calc(var(--u) * 2); }
+  100% { background-position: calc(var(--u) * -3) 0, calc(var(--u) * -2) var(--u), calc(var(--u) * -1) calc(var(--u) * 2); }
+}
+
+/* Route loaders wait 150ms before appearing, so a fast navigation never flashes one. */
+.loader-delay {
+  animation: fade-in 200ms var(--ease-out) 150ms both;
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+}
+
+/* Template settings dialog: enters and leaves as one surface with its backdrop.
+   allow-discrete keeps it painted while `display` and the top layer flip. */
+dialog[data-motion] {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 250ms var(--ease-out),
+    transform 250ms var(--ease-out),
+    overlay 250ms allow-discrete,
+    display 250ms allow-discrete;
+}
+dialog[data-motion]:not([open]) {
+  opacity: 0;
+  transform: scale(0.96);
+}
+dialog[data-motion]::backdrop {
+  opacity: 1;
+  transition:
+    opacity 250ms var(--ease-out),
+    overlay 250ms allow-discrete,
+    display 250ms allow-discrete;
+}
+dialog[data-motion]:not([open])::backdrop {
+  opacity: 0;
+}
+@starting-style {
+  dialog[data-motion][open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  dialog[data-motion][open]::backdrop {
+    opacity: 0;
+  }
+}
+
+/* Login poster: seen about once a session, so it gets the one staggered entrance. */
+.rise {
+  animation: rise 400ms var(--ease-out) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.2em);
+  }
+}
+
+/* Mode swap (sign in / sign up): the accent word wipes in, the form fades in.
+   Transitions with @starting-style rather than keyframes, so a quick double
+   toggle retargets instead of restarting. */
+.reveal {
+  clip-path: inset(0);
+  transition: clip-path 250ms var(--ease-out);
+}
+.fade-swap {
+  opacity: 1;
+  transition: opacity 200ms var(--ease-out);
+}
+@starting-style {
+  .reveal {
+    clip-path: inset(0 100% 0 0);
+  }
+  .fade-swap {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion: fewer and gentler, not none. Movement goes; fades stay, and
+   the loader keeps stepping (it is the only sign that something is happening),
+   just at half speed. */
+@media (prefers-reduced-motion: reduce) {
+  .loader {
+    animation-duration: 2s;
+  }
+  .rise {
+    animation-name: fade-in;
+  }
+  .reveal {
+    transition: none;
+  }
+  dialog[data-motion],
+  dialog[data-motion]:not([open]) {
+    transform: none;
   }
 }

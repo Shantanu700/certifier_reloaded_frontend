@@ -34,7 +34,6 @@ export default async function CanvaImportPage({
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   const q = one(params.q).trim();
   const after = one(params.after);
-  const error = one(params.error);
   const headers = sessionHeader(sessionId);
 
   let connected = false;
@@ -58,7 +57,7 @@ export default async function CanvaImportPage({
       if (page.error) connected = (await getCanvaStatus({ headers })).data?.connected ?? false;
     }
   } catch {
-    loadError = "Can't reach the server. Is the API running?";
+    loadError = "Can't reach the server. Try again in a moment.";
   }
 
   const here = `/templates/canva${q || after ? `?${new URLSearchParams({ ...(q && { q }), ...(after && { after }) })}` : ""}`;
@@ -113,10 +112,10 @@ export default async function CanvaImportPage({
       </section>
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        {error || loadError ? (
+        {loadError ? (
           <p className="px-6 pt-6 md:px-10" role="alert">
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
-              {error || loadError}
+              {loadError}
             </span>
           </p>
         ) : null}

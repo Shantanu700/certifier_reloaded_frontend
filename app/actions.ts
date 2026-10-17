@@ -12,6 +12,7 @@ import {
   type ImageBoxDraft,
 } from "@/lib/boxes";
 import { asNamingParts } from "@/lib/api";
+import { flashCookie, type FlashType } from "@/lib/flash";
 import { SESSION_COOKIE, requireUser, sessionHeader } from "@/lib/session";
 import {
   deleteCanvaConnection,
@@ -86,7 +87,7 @@ export async function login(
       },
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?", username };
+    return { error: "Can't reach the server. Try again in a moment.", username };
   }
 
   if (result.error) {
@@ -97,11 +98,11 @@ export async function login(
     };
   }
 
-  return { error: await startSession(result.response), username };
+  return { error: await startSession(result.response, "Signed in."), username };
 }
 
 /** Copies the backend's sessionid onto our origin and lands on /home; returns an error otherwise. */
-async function startSession(response: Response | undefined) {
+async function startSession(response: Response | undefined, welcome: string) {
   const sessionId = sessionIdFrom(response);
   if (!sessionId) return "The server didn't return a session.";
 
@@ -112,6 +113,7 @@ async function startSession(response: Response | undefined) {
     secure: process.env.NODE_ENV === "production",
   });
 
+  await flash("success", welcome);
   redirect("/home");
 }
 
@@ -133,7 +135,7 @@ export async function register(
       body: { username, name: field("name"), email: field("email"), password },
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?", username };
+    return { error: "Can't reach the server. Try again in a moment.", username };
   }
 
   if (result.error) {
@@ -144,7 +146,7 @@ export async function register(
     };
   }
 
-  return { error: await startSession(result.response), username };
+  return { error: await startSession(result.response, "Account created."), username };
 }
 
 /** Called from the Google button's callback with the ID token (credential) Google hands the browser. */
@@ -153,7 +155,7 @@ export async function googleLogin(idToken: string): Promise<string> {
   try {
     result = await postCoreGoogle({ body: { id_token: idToken } });
   } catch {
-    return "Can't reach the server. Is the API running?";
+    return "Can't reach the server. Try again in a moment.";
   }
 
   if (result.error) {
@@ -161,7 +163,7 @@ export async function googleLogin(idToken: string): Promise<string> {
     return messageFrom(result.error, "Google sign-in failed. Please try again.");
   }
 
-  return startSession(result.response);
+  return startSession(result.response, "Signed in with Google.");
 }
 
 export async function logout() {
@@ -175,6 +177,7 @@ export async function logout() {
   }
 
   store.delete(SESSION_COOKIE);
+  store.set(...flashCookie("info", "Signed out."));
   redirect("/login");
 }
 
@@ -194,7 +197,7 @@ export async function presignUpload(
   try {
     result = await postCoreUploadUrl({ body, headers: sessionHeader(sessionId) });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -223,7 +226,7 @@ export async function uploadTemplate(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data?.uuid) {
@@ -232,6 +235,7 @@ export async function uploadTemplate(
   }
 
   revalidatePath("/templates");
+  await flash("success", "Template uploaded.");
   redirect(`/templates/${result.data.uuid}`);
 }
 
@@ -255,7 +259,7 @@ export async function updateTemplate(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -265,6 +269,7 @@ export async function updateTemplate(
 
   revalidatePath("/templates");
   revalidatePath(`/templates/${uuid}`);
+  await flash("success", "Changes saved.");
   return { saved: true };
 }
 
@@ -281,22 +286,20 @@ export async function deleteTemplate(formData: FormData) {
     });
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {
     console.error("template delete failed", error);
-    const message = messageFrom(error, "Delete failed. Please try again.");
-    redirect(`/templates/${uuid}?error=${encodeURIComponent(message)}`);
+    return fail(`/templates/${uuid}`, messageFrom(error, "Delete failed. Please try again."));
   }
 
   revalidatePath("/templates");
+  await flash("success", "Template deleted.");
   redirect("/templates");
 }
 
 const CANVA_PAGE = "/templates/canva";
-const withError = (path: string, message: string) =>
-  `${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`;
 
 /** Sends the browser to Canva's consent screen; Canva comes back to /canva/callback. */
 export async function connectCanva() {
@@ -309,10 +312,11 @@ export async function connectCanva() {
     url = result.data?.authorize_url;
     if (result.error) message = messageFrom(result.error, message);
   } catch {
-    message = "Can't reach the server. Is the API running?";
+    message = "Can't reach the server. Try again in a moment.";
   }
 
-  redirect(url ?? withError(CANVA_PAGE, message));
+  if (!url) return fail(CANVA_PAGE, message);
+  redirect(url);
 }
 
 export async function disconnectCanva() {
@@ -322,10 +326,11 @@ export async function disconnectCanva() {
   try {
     error = (await deleteCanvaConnection({ headers: sessionHeader(sessionId) })).error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
-  if (error) redirect(withError(CANVA_PAGE, messageFrom(error, "Couldn't disconnect Canva.")));
+  if (error) return fail(CANVA_PAGE, messageFrom(error, "Couldn't disconnect Canva."));
+  await flash("success", "Canva disconnected.");
   redirect(CANVA_PAGE);
 }
 
@@ -341,8 +346,8 @@ export async function importCanvaDesign(formData: FormData) {
     ? String(formData.get("back"))
     : CANVA_PAGE;
 
-  if (!design_id) redirect(withError(back, "Pick a Canva design to import."));
-  if (!name) redirect(withError(back, "Give the template a name."));
+  if (!design_id) return fail(back, "Pick a Canva design to import.");
+  if (!name) return fail(back, "Give the template a name.");
 
   let imported: CanvaTemplateImportResult | undefined;
   let error: unknown;
@@ -354,24 +359,26 @@ export async function importCanvaDesign(formData: FormData) {
     imported = result.data;
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   const uuid = imported?.template.uuid;
   if (error || !imported || !uuid) {
     console.error("canva import failed", error);
-    redirect(withError(back, messageFrom(error, "Import failed. Please try again.")));
+    return fail(back, messageFrom(error, "Import failed. Please try again."));
   }
 
   revalidatePath("/templates");
   // Canva may refuse to upscale (Free-plan limit); say so rather than quietly delivering less.
-  redirect(
-    imported.downscaled
-      ? `/templates/${uuid}?notice=${encodeURIComponent(
-          `Imported at ${imported.width} × ${imported.height} px: your Canva plan didn't allow a larger export.`
-        )}`
-      : `/templates/${uuid}`
-  );
+  if (imported.downscaled) {
+    await flash(
+      "warning",
+      `Imported at ${imported.width} × ${imported.height} px: your Canva plan didn't allow a larger export.`
+    );
+  } else {
+    await flash("success", `Imported “${name}” from Canva.`);
+  }
+  redirect(`/templates/${uuid}`);
 }
 
 export async function syncFromCanva(formData: FormData) {
@@ -388,16 +395,17 @@ export async function syncFromCanva(formData: FormData) {
       })
     ).error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {
     console.error("canva sync failed", error);
-    redirect(withError(`/templates/${uuid}?settings=1`, messageFrom(error, "Refresh failed. Please try again.")));
+    return fail(`/templates/${uuid}?settings=1`, messageFrom(error, "Refresh failed. Please try again."));
   }
 
   revalidatePath("/templates");
   revalidatePath(`/templates/${uuid}`);
+  await flash("success", "Refreshed from Canva.");
   redirect(`/templates/${uuid}`);
 }
 
@@ -454,7 +462,7 @@ export async function saveBox(
           headers: sessionHeader(sessionId),
         });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -479,7 +487,7 @@ export async function deleteBox(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -522,7 +530,7 @@ export async function saveImageBox(
           headers: sessionHeader(sessionId),
         });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error || !result.data) {
@@ -547,7 +555,7 @@ export async function deleteImageBox(
       headers: sessionHeader(sessionId),
     });
   } catch {
-    return { error: "Can't reach the server. Is the API running?" };
+    return { error: "Can't reach the server. Try again in a moment." };
   }
 
   if (result.error) {
@@ -563,9 +571,15 @@ function stepUrl(templateUuid: string, step: string, batchUuid?: string) {
   return `/templates/${templateUuid}?step=${step}${batchUuid ? `&batch=${batchUuid}` : ""}`;
 }
 
-function fail(url: string, message: string): never {
-  const join = url.includes("?") ? "&" : "?";
-  redirect(`${url}${join}error=${encodeURIComponent(message)}`);
+/** Queues a toast for the page the action is about to redirect to (see lib/flash.ts). */
+async function flash(type: FlashType, message: string) {
+  (await cookies()).set(...flashCookie(type, message));
+}
+
+/** Error toast, then redirect. Call as `return fail(...)` so TypeScript narrows after it. */
+async function fail(url: string, message: string): Promise<never> {
+  await flash("error", message);
+  redirect(url);
 }
 
 export async function uploadBatch(templateUuid: string, upload: string) {
@@ -573,7 +587,7 @@ export async function uploadBatch(templateUuid: string, upload: string) {
   if (!templateUuid) redirect("/templates");
   const here = stepUrl(templateUuid, "csv");
 
-  if (!upload) fail(here, "Choose a CSV to upload.");
+  if (!upload) return fail(here, "Choose a CSV to upload.");
 
   let result;
   try {
@@ -583,15 +597,16 @@ export async function uploadBatch(templateUuid: string, upload: string) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    return fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error || !result.data?.uuid) {
     console.error("batch upload failed", result.response?.status, result.error);
-    fail(here, messageFrom(result.error, "That CSV wasn't accepted."));
+    return fail(here, messageFrom(result.error, "That CSV wasn't accepted."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "CSV uploaded.");
   redirect(stepUrl(templateUuid, "mapping", result.data.uuid));
 }
 
@@ -616,15 +631,16 @@ export async function saveMapping(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    return fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
     console.error("mapping save failed", result.response?.status, result.error);
-    fail(here, messageFrom(result.error, "Couldn't save that mapping."));
+    return fail(here, messageFrom(result.error, "Couldn't save that mapping."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Mapping saved.");
   redirect(stepUrl(templateUuid, "generate", uuid));
 }
 
@@ -639,7 +655,7 @@ export async function saveNaming(formData: FormData) {
   try {
     parsed = JSON.parse(String(formData.get("naming") ?? "[]"));
   } catch {
-    fail(here, "That name pattern didn't come through. Try again.");
+    return fail(here, "That name pattern didn't come through. Try again.");
   }
   const parts = asNamingParts(parsed);
 
@@ -651,15 +667,16 @@ export async function saveNaming(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    return fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
     console.error("naming save failed", result.response?.status, result.error);
-    fail(here, messageFrom(result.error, "Couldn't save that name pattern."));
+    return fail(here, messageFrom(result.error, "Couldn't save that name pattern."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "File name pattern saved.");
   redirect(here);
 }
 
@@ -677,15 +694,16 @@ export async function generateBatch(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    return fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
     console.error("generate failed", result.response?.status, result.error);
-    fail(here, messageFrom(result.error, "Couldn't start generation."));
+    return fail(here, messageFrom(result.error, "Couldn't start generation."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("info", "Generation started. Progress updates below.");
   redirect(here);
 }
 
@@ -716,15 +734,16 @@ export async function exportBatch(formData: FormData) {
       headers: sessionHeader(sessionId),
     });
   } catch {
-    fail(here, "Can't reach the server. Is the API running?");
+    return fail(here, "Can't reach the server. Try again in a moment.");
   }
 
   if (result.error) {
     console.error("export failed", result.response?.status, result.error);
-    fail(here, messageFrom(result.error, "Couldn't start the export."));
+    return fail(here, messageFrom(result.error, "Couldn't start the export."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("info", "Building the zip. The download link appears when it's ready.");
   redirect(here);
 }
 
@@ -756,14 +775,15 @@ export async function deleteBatch(formData: FormData) {
     });
     error = result.error;
   } catch {
-    error = { msg: "Can't reach the server. Is the API running?" };
+    error = { msg: "Can't reach the server. Try again in a moment." };
   }
 
   if (error) {
     console.error("batch delete failed", error);
-    fail(here, messageFrom(error, "Delete failed. Please try again."));
+    return fail(here, messageFrom(error, "Delete failed. Please try again."));
   }
 
   revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Batch deleted.");
   redirect(stepUrl(templateUuid, "csv"));
 }

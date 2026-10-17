@@ -65,7 +65,7 @@ export default async function HomePage() {
           </p>
           <Button
             asChild
-            className={`${GAP} h-12 w-fit gap-3 px-6 text-base tracking-tighter transition-transform active:scale-[0.98] md:h-14 md:px-8 md:text-lg`}
+            className={`${GAP} h-12 w-fit gap-3 px-6 text-base tracking-tighter md:h-14 md:px-8 md:text-lg`}
           >
             <Link href="/templates">
               Open templates

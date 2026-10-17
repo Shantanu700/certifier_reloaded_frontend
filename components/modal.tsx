@@ -25,7 +25,10 @@ export function Modal({
     <dialog
       ref={ref}
       aria-label={label}
-      onClose={() => router.push(closeHref)}
+      data-motion
+      // Navigate after the 250ms exit (globals.css `dialog[data-motion]`), or the
+      // route change unmounts the dialog mid-fade.
+      onClose={() => setTimeout(() => router.push(closeHref), 250)}
       onClick={(e) => {
         if (e.target === ref.current) ref.current.close();
       }}

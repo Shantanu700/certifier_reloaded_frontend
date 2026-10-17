@@ -1,6 +1,8 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
+import { flashCookie } from "@/lib/flash";
 import { getSessionId, sessionHeader } from "@/lib/session";
 import { postCanvaCallback } from "@/src/client";
 
@@ -51,10 +53,13 @@ export async function GET(request: NextRequest) {
         message = typeof msg === "string" ? msg : "Couldn't connect Canva. Try again.";
       }
     } catch {
-      message = "Can't reach the server. Is the API running?";
+      message = "Can't reach the server. Try again in a moment.";
     }
   }
 
+  (await cookies()).set(
+    ...(message ? flashCookie("error", message) : flashCookie("success", "Canva connected."))
+  );
   // redirect() throws, so it stays outside the try above.
-  redirect(message ? `${CANVA_PAGE}?error=${encodeURIComponent(message)}` : CANVA_PAGE);
+  redirect(CANVA_PAGE);
 }

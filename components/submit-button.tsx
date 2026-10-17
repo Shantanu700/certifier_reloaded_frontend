@@ -3,6 +3,7 @@
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 
+import { Loader } from "@/components/loader";
 import { Button } from "@/components/ui/button";
 
 export function SubmitButton({
@@ -20,7 +21,14 @@ export function SubmitButton({
       aria-busy={pending}
       {...props}
     >
-      {pending ? pendingLabel : children}
+      {pending ? (
+        <>
+          <Loader size="18px" />
+          {pendingLabel}
+        </>
+      ) : (
+        children
+      )}
     </Button>
   );
 }

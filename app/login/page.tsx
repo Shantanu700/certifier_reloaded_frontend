@@ -2,6 +2,7 @@
 
 import {
   useActionState,
+  useEffect,
   useRef,
   useState,
   useTransition,
@@ -9,9 +10,11 @@ import {
 } from "react";
 import Script from "next/script";
 import { ArrowRight } from "lucide-react";
+import { toast } from "sonner";
 
 import { googleLogin, login, register } from "@/app/actions";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Loader } from "@/components/loader";
 import { Wordmark } from "@/components/wordmark";
 import { Button } from "@/components/ui/button";
 
@@ -57,15 +60,22 @@ export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
   const [loginState, loginAction, loginPending] = useActionState(login, null);
   const [registerState, registerAction, registerPending] = useActionState(register, null);
-  const [googleError, setGoogleError] = useState<string>();
   const [googlePending, startGoogle] = useTransition();
   const googleRef = useRef<HTMLDivElement>(null);
 
   const isRegister = mode === "register";
   const state = isRegister ? registerState : loginState;
   const pending = loginPending || registerPending || googlePending;
-  const error = googleError ?? state?.error;
   const invalid = state ? true : undefined;
+
+  // Each failed attempt returns a fresh state object, so a repeated mistake toasts again.
+  // Success never lands here: the action redirects to /home with its own toast.
+  useEffect(() => {
+    if (loginState?.error) toast.error(loginState.error);
+  }, [loginState]);
+  useEffect(() => {
+    if (registerState?.error) toast.error(registerState.error);
+  }, [registerState]);
 
   function field(
     name: string,
@@ -83,7 +93,6 @@ export default function LoginPage() {
           name={name}
           required
           aria-invalid={invalid}
-          aria-describedby={error ? "login-error" : undefined}
           className={FIELD_CLASS}
           {...props}
         />
@@ -99,7 +108,7 @@ export default function LoginPage() {
       callback: ({ credential }) =>
         startGoogle(async () => {
           // Resolves only on failure; on success the action redirects to /home.
-          setGoogleError(await googleLogin(credential));
+          toast.error(await googleLogin(credential));
         }),
     });
     google.accounts.id.renderButton(googleRef.current, {
@@ -125,15 +134,19 @@ export default function LoginPage() {
         {/* On phones the form's own heading carries the page, so the poster is desktop-only. */}
         <div className="flex flex-1 flex-col justify-center px-6 pb-24 max-lg:hidden md:px-10">
           <h1 className="text-[clamp(3rem,min(9vw,17dvh),11rem)] leading-[0.8] font-bold tracking-tighter uppercase">
-            Sign
-            <br />
-            <span className="inline-block bg-accent px-4 py-1 text-accent-foreground">
-              {isRegister ? "Up" : "In"}
+            <span className="rise block">Sign</span>
+            <span className="rise block [animation-delay:60ms]">
+              {/* Keyed so the swap remounts and .reveal wipes the new word in. */}
+              <span
+                key={mode}
+                className="reveal inline-block bg-accent px-4 py-1 text-accent-foreground"
+              >
+                {isRegister ? "Up" : "In"}
+              </span>
             </span>
-            <br />
-            To Issue
+            <span className="rise block [animation-delay:120ms]">To Issue</span>
           </h1>
-          <p className="mt-[clamp(1rem,4dvh,2rem)] max-w-md text-lg leading-tight text-muted-foreground md:text-xl">
+          <p className="rise mt-[clamp(1rem,4dvh,2rem)] max-w-md text-lg leading-tight text-muted-foreground [animation-delay:180ms] md:text-xl">
             One design, one CSV, one certificate per row.
           </p>
         </div>
@@ -145,8 +158,7 @@ export default function LoginPage() {
           <form
             key={mode}
             action={isRegister ? registerAction : loginAction}
-            onSubmit={() => setGoogleError(undefined)}
-            className={STACK}
+            className={`fade-swap ${STACK}`}
           >
             <div>
               <h2 className="text-[clamp(2rem,6dvh,3.75rem)] leading-none font-bold tracking-tighter uppercase">
@@ -187,24 +199,16 @@ export default function LoginPage() {
                 })}
             </fieldset>
 
-            <p id="login-error" aria-live="polite">
-              {error ? (
-                <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
-                  {error}
-                </span>
-              ) : null}
-            </p>
-
             <Button
               type="submit"
               disabled={pending}
               aria-busy={pending}
-              className="h-12 w-full gap-3 text-base tracking-tighter transition-transform hover:scale-[1.02] active:scale-95 md:h-14 md:text-lg"
+              className="h-12 w-full gap-3 text-base tracking-tighter md:h-14 md:text-lg"
             >
               {pending
                 ? isRegister ? "Creating account…" : "Signing in…"
-                : isRegister ? "Create Account" : "Enter Console"}
-              <ArrowRight className="size-5" aria-hidden="true" />
+                : isRegister ? "Create account" : "Sign in"}
+              {pending ? <Loader /> : <ArrowRight className="size-5" aria-hidden="true" />}
             </Button>
           </form>
 
@@ -230,10 +234,7 @@ export default function LoginPage() {
             {isRegister ? "Already have an account?" : "New here?"}{" "}
             <button
               type="button"
-              onClick={() => {
-                setGoogleError(undefined);
-                setMode(isRegister ? "login" : "register");
-              }}
+              onClick={() => setMode(isRegister ? "login" : "register")}
               className="cursor-pointer font-bold tracking-widest uppercase underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
             >
               {isRegister ? "Sign in" : "Create an account"}
