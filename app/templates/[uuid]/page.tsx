@@ -62,6 +62,7 @@ export default async function TemplatePage({
   const { uuid } = await params;
   const {
     error,
+    notice,
     step: stepParam,
     batch: batchParam,
     page: pageParam,
@@ -296,6 +297,13 @@ export default async function TemplatePage({
             <p role="alert">
               <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
                 {error}
+              </span>
+            </p>
+          ) : null}
+          {notice && !error ? (
+            <p role="status">
+              <span className="inline-block border-2 border-accent px-3 py-1.5 text-sm font-bold tracking-widest uppercase">
+                {notice}
               </span>
             </p>
           ) : null}

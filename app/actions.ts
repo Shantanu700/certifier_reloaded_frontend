@@ -40,6 +40,7 @@ import {
   putCertificateTemplate,
   putCertificateTemplateBoxes,
   putCertificateTemplateImageBoxes,
+  type CanvaTemplateImportResult,
   type PresignUploadRequest,
   type PresignUploadResponse,
   type TemplateBox,
@@ -333,6 +334,8 @@ export async function importCanvaDesign(formData: FormData) {
   const design_id = String(formData.get("design_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const page = Math.max(1, Math.trunc(Number(formData.get("page"))) || 1);
+  // The slider's value; the backend enforces its 800–4000 px bounds and defaults when absent.
+  const width = Math.trunc(Number(formData.get("width"))) || undefined;
   // Land back on the same search results if the import fails.
   const back = String(formData.get("back") ?? "").startsWith(CANVA_PAGE)
     ? String(formData.get("back"))
@@ -341,26 +344,34 @@ export async function importCanvaDesign(formData: FormData) {
   if (!design_id) redirect(withError(back, "Pick a Canva design to import."));
   if (!name) redirect(withError(back, "Give the template a name."));
 
-  let uuid: string | undefined;
+  let imported: CanvaTemplateImportResult | undefined;
   let error: unknown;
   try {
     const result = await postCertificateTemplateImportCanva({
-      body: { design_id, name, page },
+      body: { design_id, name, page, width },
       headers: sessionHeader(sessionId),
     });
-    uuid = result.data?.uuid;
+    imported = result.data;
     error = result.error;
   } catch {
     error = { msg: "Can't reach the server. Is the API running?" };
   }
 
-  if (error || !uuid) {
+  const uuid = imported?.template.uuid;
+  if (error || !imported || !uuid) {
     console.error("canva import failed", error);
     redirect(withError(back, messageFrom(error, "Import failed. Please try again.")));
   }
 
   revalidatePath("/templates");
-  redirect(`/templates/${uuid}`);
+  // Canva may refuse to upscale (Free-plan limit); say so rather than quietly delivering less.
+  redirect(
+    imported.downscaled
+      ? `/templates/${uuid}?notice=${encodeURIComponent(
+          `Imported at ${imported.width} × ${imported.height} px: your Canva plan didn't allow a larger export.`
+        )}`
+      : `/templates/${uuid}`
+  );
 }
 
 export async function syncFromCanva(formData: FormData) {

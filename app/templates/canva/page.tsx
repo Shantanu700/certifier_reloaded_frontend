@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
 import { connectCanva, disconnectCanva, importCanvaDesign } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
+import { CanvaQualitySlider } from "@/components/canva-quality-slider";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { requireUser, sessionHeader } from "@/lib/session";
@@ -190,6 +191,11 @@ export default async function CanvaImportPage({
                       </div>
                     ) : null}
                   </div>
+                  <CanvaQualitySlider
+                    id={`width-${design.id}`}
+                    thumbnailWidth={design.thumbnail_width}
+                    thumbnailHeight={design.thumbnail_height}
+                  />
                   <SubmitButton pendingLabel="Importing…" className="mt-auto h-12 gap-3">
                     Import
                     <ArrowRight className="size-4" aria-hidden="true" />
