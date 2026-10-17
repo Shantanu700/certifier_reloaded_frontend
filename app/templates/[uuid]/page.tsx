@@ -62,6 +62,7 @@ export default async function TemplatePage({
   const { uuid } = await params;
   const {
     error,
+    notice,
     step: stepParam,
     batch: batchParam,
     page: pageParam,
@@ -229,7 +230,8 @@ export default async function TemplatePage({
           <h3 className={RAIL_HEADING}>From Canva</h3>
           <p className="mt-4 text-sm text-muted-foreground">
             Re-export page {template.canva_page ?? 1} of the Canva design after editing
-            it there. Boxes stay where they are, so the design&apos;s size must not change.
+            it there. Placed boxes stay where they are, so the design&apos;s size must not
+            change. A template with no boxes yet is re-exported at full print quality.
           </p>
           <input type="hidden" name="uuid" value={templateUuid} />
           <SubmitButton
@@ -295,6 +297,13 @@ export default async function TemplatePage({
             <p role="alert">
               <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
                 {error}
+              </span>
+            </p>
+          ) : null}
+          {notice && !error ? (
+            <p role="status">
+              <span className="inline-block border-2 border-accent px-3 py-1.5 text-sm font-bold tracking-widest uppercase">
+                {notice}
               </span>
             </p>
           ) : null}

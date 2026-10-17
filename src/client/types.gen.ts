@@ -43,6 +43,11 @@ export type CanvaDesign = {
      * Expires after 15 minutes; don't cache it.
      */
     thumbnail_url: string | null;
+    /**
+     * Same proportions as the design; use it for the aspect ratio.
+     */
+    thumbnail_width: number | null;
+    thumbnail_height: number | null;
     page_count: number | null;
     /**
      * Unix timestamp (seconds).
@@ -69,6 +74,23 @@ export type CanvaTemplateImport = {
      */
     page?: number;
     name: string;
+    /**
+     * Export width in pixels; the height follows the design's proportions.
+     */
+    width?: number;
+};
+
+export type CanvaTemplateImportResult = {
+    template: CertificateTemplate;
+    /**
+     * Pixel width actually imported.
+     */
+    width: number;
+    height: number;
+    /**
+     * Canva wouldn't export at the requested width (e.g. its Free-plan upscale limit), so the design's own size was used.
+     */
+    downscaled: boolean;
 };
 
 /**
@@ -448,6 +470,19 @@ export type UnAuthenticatedResponseType = {
      * Msg
      */
     msg: string;
+};
+
+export type CanvaTemplateImportResultWritable = {
+    template: CertificateTemplateWritable;
+    /**
+     * Pixel width actually imported.
+     */
+    width: number;
+    height: number;
+    /**
+     * Canva wouldn't export at the requested width (e.g. its Free-plan upscale limit), so the design's own size was used.
+     */
+    downscaled: boolean;
 };
 
 export type CertificateBatchWritable = {
@@ -1727,7 +1762,7 @@ export type PostCertificateTemplateImportCanvaResponses = {
     /**
      * Indicates that operation was successful.
      */
-    201: CertificateTemplate;
+    201: CanvaTemplateImportResult;
 };
 
 export type PostCertificateTemplateImportCanvaResponse = PostCertificateTemplateImportCanvaResponses[keyof PostCertificateTemplateImportCanvaResponses];
