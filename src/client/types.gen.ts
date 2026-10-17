@@ -1105,7 +1105,20 @@ export type RetrieveCertificateBatchProgressResponse = RetrieveCertificateBatchP
 export type ListCertificateTemplatesData = {
     body?: never;
     path?: never;
-    query?: never;
+    query?: {
+        /**
+         * 1-indexed page number.
+         */
+        page?: number;
+        /**
+         * Templates per page (default 10, max 50).
+         */
+        page_size?: number;
+        /**
+         * Case-insensitive match on the template name.
+         */
+        search?: string;
+    };
     url: '/certificate-template/';
 };
 

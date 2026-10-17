@@ -1,11 +1,14 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { redirect } from "next/navigation";
+import { ArrowUpRight, Search } from "lucide-react";
 
 import { uploadTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
+import { Pager } from "@/components/batch-panels";
 import { TemplateForm } from "@/components/template-form";
 import { TemplatePreview } from "@/components/template-preview";
-import { asList } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { asList, asPageNumber, type PageInfo } from "@/lib/api";
 import { requireUser, sessionHeader } from "@/lib/session";
 import {
   listCertificateTemplates,
@@ -18,20 +21,50 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
   year: "numeric",
 };
 
-export default async function TemplatesPage() {
+// A multiple of the grid's 2 and 3 columns, so full pages have no ragged last row.
+const PAGE_SIZE = 12;
+
+const listHref = (q: string, page: number) => {
+  const params = new URLSearchParams({ ...(q && { q }), ...(page > 1 && { page: String(page) }) });
+  return params.size ? `/templates?${params}` : "/templates";
+};
+
+export default async function TemplatesPage({
+  searchParams,
+}: PageProps<"/templates">) {
   const { sessionId } = await requireUser();
+  const params = await searchParams;
+  const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
+  // Matching happens in Django (?search=); this page only forwards the text and renders what comes back.
+  const q = one(params.q).trim().slice(0, 255);
+  const pageNumber = asPageNumber(params.page);
 
   let templates: CertificateTemplate[] = [];
+  let page: PageInfo | undefined;
   let loadError: string | undefined;
+  let outOfRange = false;
   try {
     const result = await listCertificateTemplates({
       headers: sessionHeader(sessionId),
+      query: { ...(q && { search: q }), page: pageNumber, page_size: PAGE_SIZE },
     });
-    if (result.error) loadError = "The server couldn't return your templates.";
-    templates = asList<CertificateTemplate>(result.data);
+    // DRF answers a page past the end with 404, e.g. after deleting the last template on it.
+    outOfRange = result.response?.status === 404 && pageNumber > 1;
+    if (result.error && !outOfRange) loadError = "The server couldn't return your templates.";
+    templates = asList<CertificateTemplate>(result.data?.results ?? []).filter((t) => t?.uuid);
+    if (result.data) {
+      page = {
+        count: result.data.count,
+        page: pageNumber,
+        size: PAGE_SIZE,
+        hasNext: Boolean(result.data.next),
+        hasPrev: Boolean(result.data.previous),
+      };
+    }
   } catch {
     loadError = "Can't reach the server. Is the API running?";
   }
+  if (outOfRange) redirect(listHref(q, 1));
 
   return (
     <div className="flex flex-col lg:h-dvh lg:overflow-hidden">
@@ -54,7 +87,8 @@ export default async function TemplatesPage() {
           </div>
 
           <p className="text-xs tracking-widest text-muted-foreground uppercase">
-            <span className="text-foreground">{templates.length}</span> on file
+            <span className="text-foreground">{page?.count ?? templates.length}</span>{" "}
+            {q ? `matching “${q}”` : "on file"}
           </p>
         </div>
 
@@ -84,6 +118,42 @@ export default async function TemplatesPage() {
       </section>
 
       <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <form
+          action="/templates"
+          role="search"
+          className="flex flex-wrap items-end gap-3 border-b-2 border-border px-6 py-4 md:px-10"
+        >
+          <div className="min-w-0 flex-1 sm:max-w-sm">
+            <label
+              htmlFor="template-search"
+              className="block text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase"
+            >
+              Search templates
+            </label>
+            <input
+              id="template-search"
+              name="q"
+              type="search"
+              maxLength={255}
+              defaultValue={q}
+              placeholder="Template name"
+              className="mt-1 h-11 w-full border-b-2 border-border bg-transparent px-2 text-base font-bold tracking-tight outline-none focus:border-accent"
+            />
+          </div>
+          <Button type="submit" className="h-11 gap-2 px-6">
+            <Search className="size-4" aria-hidden="true" />
+            Search
+          </Button>
+          {q ? (
+            <Link
+              href="/templates"
+              className="tap self-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Clear
+            </Link>
+          ) : null}
+        </form>
+
         {loadError ? (
           <p className="px-6 pt-8 md:px-10" role="alert">
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
@@ -92,7 +162,14 @@ export default async function TemplatesPage() {
           </p>
         ) : null}
 
-        {templates.length === 0 ? (
+        {templates.length === 0 && q && !loadError ? (
+          <p className="px-6 py-10 text-sm text-muted-foreground md:px-10">
+            No templates match “{q}”.{" "}
+            <Link href="/templates" className="font-bold text-foreground underline underline-offset-4">
+              Show all templates
+            </Link>
+          </p>
+        ) : templates.length === 0 ? (
           <div className="flex h-full min-h-80 items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-lg border-2 border-dashed border-border px-8 py-14 text-center">
               <h2 className="text-2xl font-bold tracking-tighter uppercase md:text-4xl">
@@ -146,6 +223,12 @@ export default async function TemplatesPage() {
             ))}
           </section>
         )}
+
+        {page && (page.hasPrev || page.hasNext) ? (
+          <div className="px-6 py-6 md:px-10">
+            <Pager page={page} href={(to) => listHref(q, to)} label="Template pages" />
+          </div>
+        ) : null}
       </div>
     </div>
   );
