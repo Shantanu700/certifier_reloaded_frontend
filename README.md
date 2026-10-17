@@ -44,7 +44,10 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
 - The dev backend uses a self-signed certificate, so the scripts set
   `NODE_TLS_REJECT_UNAUTHORIZED=0`. This is for local development only — remove it once
   the certificate is trusted, and never deploy with it.
-- No environment variables or `.env` file are needed.
+- To show the "Continue with Google" button, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `.env.local`
+  to the same OAuth client id the backend has as `GOOGLE_CLIENT_ID`, and add
+  `http://localhost:3000` to that client's authorised JavaScript origins. Without it the
+  button is hidden; nothing else needs environment variables.
 - There is no test suite yet.
 
 ## How the app works
@@ -55,7 +58,7 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
 |---|---|
 | `/` | Redirects to `/home` |
 | `/home` | Signed-in home page |
-| `/login` | Sign in |
+| `/login` | Sign in, create an account, or continue with Google |
 | `/templates` | List, create, rename and replace certificate templates |
 | `/templates/[uuid]` | The full pipeline for one template (see below) |
 

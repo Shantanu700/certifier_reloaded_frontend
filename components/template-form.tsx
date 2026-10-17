@@ -114,7 +114,7 @@ export function TemplateForm({
             className="mt-2 px-4 text-xs tracking-widest text-muted-foreground uppercase"
           >
             PNG, JPG or PDF, up to {MAX_UPLOAD_MB} MB
-            {template ? " — leave empty to keep the current file" : null}
+            {template ? ". Leave empty to keep the current file" : null}
           </p>
         </div>
       </fieldset>
@@ -126,7 +126,7 @@ export function TemplateForm({
             : "space-y-8"
         }
       >
-        <p id={statusId} aria-live="polite" className="min-h-8 px-4">
+        <p id={statusId} aria-live="polite" className="min-h-8 px-4 empty:min-h-0">
           {oversize ? (
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
               {oversize}

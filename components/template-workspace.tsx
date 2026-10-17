@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type CSSProperties,
+} from "react";
 import { Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
@@ -47,10 +54,10 @@ const FONT_STACK: Record<FontEnum, string> = {
 const OUTLINE_ALPHA = "30";
 
 const HANDLE_POSITION: Record<Corner, string> = {
-  nw: "-top-1.5 -left-1.5 cursor-nwse-resize",
-  ne: "-top-1.5 -right-1.5 cursor-nesw-resize",
-  sw: "-bottom-1.5 -left-1.5 cursor-nesw-resize",
-  se: "-bottom-1.5 -right-1.5 cursor-nwse-resize",
+  nw: "-top-1.5 -left-1.5 pointer-coarse:-top-3 pointer-coarse:-left-3 cursor-nwse-resize",
+  ne: "-top-1.5 -right-1.5 pointer-coarse:-top-3 pointer-coarse:-right-3 cursor-nesw-resize",
+  sw: "-bottom-1.5 -left-1.5 pointer-coarse:-bottom-3 pointer-coarse:-left-3 cursor-nesw-resize",
+  se: "-bottom-1.5 -right-1.5 pointer-coarse:-bottom-3 pointer-coarse:-right-3 cursor-nwse-resize",
 };
 
 function toEditorBox(box: TemplateBox, id: number): EditorBox {
@@ -384,7 +391,14 @@ export function TemplateWorkspace({
         <div className="mt-4 min-h-0 flex-1 overflow-auto border-2 border-border bg-muted/40 p-4">
           <div
             ref={wrapRef}
-            className="relative mx-auto w-full touch-none select-none"
+            // Stacked layouts cap the artwork at 40% of the viewport height so the
+            // steps stay in reach on a portrait tablet; scale follows the width.
+            className="relative mx-auto w-full touch-none select-none max-lg:max-w-[calc(40dvh*var(--ar))]"
+            style={
+              natural
+                ? ({ "--ar": natural.width / natural.height } as CSSProperties)
+                : undefined
+            }
             onPointerMove={onPointerMove}
             onPointerUp={endGesture}
             onPointerCancel={endGesture}
@@ -465,7 +479,7 @@ export function TemplateWorkspace({
                               aria-hidden="true"
                               onPointerDown={(e) => onPointerDown(e, box, corner)}
                               className={cn(
-                                "absolute size-3 border-2 border-accent bg-background",
+                                "absolute size-3 border-2 border-accent bg-background pointer-coarse:size-6",
                                 HANDLE_POSITION[corner]
                               )}
                             />
@@ -572,7 +586,7 @@ export function TemplateWorkspace({
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
                     <label className="col-span-2">
-                      <span className={LABEL}>Key — the name it&apos;s mapped by</span>
+                      <span className={LABEL}>Key: the name it&apos;s mapped by</span>
                       <input
                         type="text"
                         value={selected.key}
@@ -648,7 +662,7 @@ export function TemplateWorkspace({
                           </Button>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                          The same image prints on every certificate — it isn&apos;t
+                          The same image prints on every certificate. It isn&apos;t
                           mapped to a CSV column.
                         </p>
                       </div>
@@ -731,7 +745,7 @@ export function TemplateWorkspace({
                 <p className="border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
                   {boxes.length
                     ? "Pick a box to change its key, font or exact position. Drag to move, corners to resize, arrow keys to nudge."
-                    : "No boxes yet. Add a box for a value from your CSV, or an image that prints on every certificate — then drag it into place."}
+                    : "No boxes yet. Add a box for a value from your CSV, or an image that prints on every certificate, then drag it into place."}
                 </p>
               )}
             </section>

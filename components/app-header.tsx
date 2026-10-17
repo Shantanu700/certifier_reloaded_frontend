@@ -7,7 +7,7 @@ import { Wordmark } from "@/components/wordmark";
 
 export function AppHeader({ crumb }: { crumb?: string }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-border px-6 py-5 md:px-10">
+    <header className="flex flex-wrap items-center justify-between gap-4 border-b-2 border-border px-6 py-3 md:px-10 md:py-5">
       <div className="flex items-center gap-4">
         <Link
           href="/home"
@@ -23,11 +23,11 @@ export function AppHeader({ crumb }: { crumb?: string }) {
         ) : null}
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {crumb === "Templates" ? null : (
           <Link
             href="/templates"
-            className="inline-flex h-11 items-center border-2 border-border px-4 text-xs font-bold tracking-widest uppercase transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            className="inline-flex h-11 items-center border-2 border-border px-3 text-xs sm:px-4 font-bold tracking-widest uppercase transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Templates
           </Link>
@@ -37,7 +37,7 @@ export function AppHeader({ crumb }: { crumb?: string }) {
           <SubmitButton
             variant="outline"
             pendingLabel="Signing out…"
-            className="h-11 border-2 px-4 text-xs tracking-widest hover:bg-foreground hover:text-background"
+            className="h-11 border-2 px-3 text-xs tracking-widest sm:px-4 hover:bg-foreground hover:text-background"
           >
             Sign out
           </SubmitButton>

@@ -215,7 +215,7 @@ export default async function TemplatePage({
         <div className="col-span-2">
           <dt className={META_LABEL}>Reference</dt>
           <dd className="mt-1 font-mono text-xs break-all text-muted-foreground">
-            {template.uuid ?? "—"}
+            {template.uuid ?? "Not assigned"}
           </dd>
         </div>
       </dl>
@@ -258,7 +258,7 @@ export default async function TemplatePage({
         <div className="min-w-0">
           <Link
             href="/templates"
-            className="inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
+            className="tap inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-accent"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             All templates
@@ -281,7 +281,7 @@ export default async function TemplatePage({
               href={fileUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="tap inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               Open original
               <ExternalLink className="size-3.5" aria-hidden="true" />

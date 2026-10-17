@@ -104,7 +104,7 @@ export function MappingPanel({
   if (!batch) {
     return (
       <p className={NUDGE}>
-        Upload a CSV first — there are no columns to map yet.
+        Upload a CSV first. There are no columns to map yet.
       </p>
     );
   }
@@ -112,8 +112,8 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         This template has no text boxes, so there&apos;s nothing to map a column
-        onto. Go back to step 01 and add some. Image boxes don&apos;t appear here
-        — their image is set when you place them.
+        onto. Go back to step 01 and add some. Image boxes don&apos;t appear here,
+        because their image is set when you place them.
       </p>
     );
   }
@@ -123,7 +123,7 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         No columns came back for this CSV. The server hasn&apos;t parsed a header
-        row from it{batch.error_message ? ` — ${batch.error_message}` : ""}.
+        row from it{batch.error_message ? `: ${batch.error_message}` : ""}.
       </p>
     );
   }
@@ -153,7 +153,7 @@ export function MappingPanel({
                   defaultValue={byBox[box.key] ?? ""}
                   className={SELECT_CLASS}
                 >
-                  <option value="">— not mapped —</option>
+                  <option value="">Not mapped</option>
                   {columns.map((column) => (
                     <option key={column} value={column}>
                       {column}
@@ -194,7 +194,7 @@ function pageHref(
 }
 
 const PAGER_LINK =
-  "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
+  "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3.5 hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
 
 function Pager({
   templateUuid,
@@ -270,7 +270,7 @@ function PageSizes({
             href={pageHref(templateUuid, batch?.uuid, 1, size)}
             aria-current={size === page.size || undefined}
             className={cn(
-              "px-2.5 py-1 text-[0.625rem] font-bold tracking-widest tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+              "px-2.5 py-1 text-[0.625rem] font-bold tracking-widest tabular-nums pointer-coarse:px-3.5 pointer-coarse:py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
               size === page.size
                 ? "bg-accent text-accent-foreground"
                 : "bg-background hover:bg-muted"
@@ -334,7 +334,7 @@ export function GeneratePanel({
           {status === "mapped"
             ? "The mapping is saved. Generating stamps every row onto the template."
             : status === "pending"
-              ? "Save a mapping first — generation only runs on a mapped batch."
+              ? "Save a mapping first. Generation only runs on a mapped batch."
               : running
                 ? "Running. The bar above updates every few seconds."
                 : `This batch is ${status}.`}
@@ -427,7 +427,7 @@ export function GeneratePanel({
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                      className="tap inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
                       Open
                       <Download className="size-3.5" aria-hidden="true" />

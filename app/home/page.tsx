@@ -1,108 +1,112 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
+import { Button } from "@/components/ui/button";
 import { requireUser } from "@/lib/session";
 
-const AREAS = [
+// The same order as the wizard on /templates/[uuid], so the numbers mean something.
+const STEPS = [
   {
-    n: "01",
-    title: "Templates",
-    body: "Upload and manage the artwork certificates are printed onto.",
-    href: "/templates",
+    title: "Upload a design",
+    body: "The artwork every certificate is printed on. PNG or JPG if you want to place text on it.",
   },
-  { n: "02", title: "Issue", body: "Create certificates and send them to recipients." },
-  { n: "03", title: "Verify", body: "Look up a certificate and confirm it is genuine." },
-  { n: "04", title: "Revoke", body: "Withdraw a certificate that should no longer stand." },
+  {
+    title: "Place boxes",
+    body: "Drag a box onto each spot where a name, date or image should print.",
+  },
+  {
+    title: "Upload a CSV",
+    body: "One row per recipient. The header row gives the column names.",
+  },
+  {
+    title: "Map and generate",
+    body: "Match columns to boxes, generate the batch, then download it as a zip.",
+  },
 ];
+
+const NOT_BUILT = ["Email delivery", "Recipient download page", "Public verification"];
+
+// The page is locked to one viewport: type and spacing scale with height as well as
+// width, and secondary copy drops out on short screens rather than forcing a scroll.
+const SHORT = "[@media(max-height:500px)]:hidden";
+const GAP = "mt-[clamp(0.75rem,2.5dvh,2.5rem)] [@media(max-height:500px)]:mt-0";
+// Under 500px tall (phones in landscape) the button sits beside the headline.
+const SHORT_ROW =
+  "[@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-center [@media(max-height:500px)]:justify-between [@media(max-height:500px)]:gap-6";
 
 export default async function HomePage() {
   const { user } = await requireUser();
 
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <AppHeader />
 
-      <main className="flex flex-1 flex-col">
-        <section className="px-6 py-20 md:px-10 md:py-32">
-          <h1 className="text-[clamp(3rem,12vw,13rem)] leading-[0.8] font-bold tracking-tighter uppercase">
-            Partly
-            <br />
-            <span className="inline-block bg-accent px-4 py-1 text-accent-foreground">
-              Wired
-            </span>
-          </h1>
-          <p className="mt-10 max-w-xl text-lg leading-tight text-muted-foreground md:text-2xl">
-            Templates are live. Issuing, verifying and revoking have no endpoints
-            yet — those three cards below are still placeholders.
-          </p>
-          <p className="mt-8 text-xs tracking-widest text-muted-foreground uppercase md:text-sm">
+      <main className="flex min-h-0 flex-1 flex-col">
+        <section
+          className={`flex min-h-0 flex-1 flex-col justify-center px-6 py-[clamp(0.75rem,4dvh,4rem)] md:px-10 ${SHORT_ROW}`}
+        >
+          <p className={`text-xs tracking-widest text-muted-foreground uppercase md:text-sm ${SHORT}`}>
             Signed in as <span className="text-foreground">{user.name || user.username}</span>
           </p>
+          <h1
+            className={`${GAP} text-[clamp(1.75rem,min(12vw,11dvh),10rem)] leading-[0.85] lg:text-[clamp(3rem,min(9vw,17dvh),11rem)] lg:leading-[0.8] font-bold tracking-tighter uppercase`}
+          >
+            Certificates
+            <br />
+            <span className="inline-block bg-accent px-[0.15em] py-[0.03em] text-accent-foreground lg:px-4 lg:py-1">
+              In bulk
+            </span>
+          </h1>
+          <p
+            className={`${GAP} max-w-xl text-base leading-snug text-muted-foreground md:text-xl [@media(max-height:600px)]:hidden`}
+          >
+            One design and one CSV. You get a certificate for every row.
+          </p>
+          <Button
+            asChild
+            className={`${GAP} h-12 w-fit gap-3 px-6 text-base tracking-tighter transition-transform active:scale-[0.98] md:h-14 md:px-8 md:text-lg`}
+          >
+            <Link href="/templates">
+              Open templates
+              <ArrowRight className="size-5" aria-hidden="true" />
+            </Link>
+          </Button>
         </section>
 
-        <section className="grid gap-px border-t-2 border-border bg-border md:grid-cols-2 xl:grid-cols-4">
-          {AREAS.map((area) => {
-            const body = (
-              <>
-                <span
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -top-6 -right-2 text-[8rem] leading-none font-bold text-muted select-none group-hover:text-accent-foreground/20 md:text-[10rem]"
-                >
-                  {area.n}
-                </span>
-                <div className="relative">
-                  <h2 className="text-4xl font-bold tracking-tighter uppercase md:text-5xl">
-                    {area.title}
-                  </h2>
-                  <p className="mt-6 max-w-xs text-base text-muted-foreground group-hover:text-accent-foreground/80 md:text-lg">
-                    {area.body}
-                  </p>
-                </div>
-                <p className="relative mt-8">
-                  {area.href ? (
-                    <span className="inline-flex items-center gap-2 border-2 border-current px-2 py-1 text-[0.6875rem] font-bold tracking-widest uppercase">
-                      Open
-                      <ArrowUpRight
-                        className="size-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                        aria-hidden="true"
-                      />
-                    </span>
-                  ) : (
-                    <span className="inline-block border-2 border-border px-2 py-1 text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase">
-                      Not built yet
-                    </span>
-                  )}
-                </p>
-              </>
-            );
-
-            const CELL_CLASS =
-              "group relative flex min-h-72 flex-col justify-between overflow-hidden bg-background p-8 md:p-12";
-
-            return area.href ? (
-              <Link
-                key={area.n}
-                href={area.href}
-                className={`${CELL_CLASS} transition-colors duration-300 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent`}
+        <section aria-labelledby="how-heading" className="shrink-0 border-t-2 border-border">
+          <h2 id="how-heading" className="sr-only">
+            How a batch is made
+          </h2>
+          <ol className="grid grid-cols-2 gap-px bg-border sm:grid-cols-4 [@media(max-height:500px)]:grid-cols-4">
+            {STEPS.map((s, i) => (
+              <li
+                key={s.title}
+                className="bg-background px-4 py-[clamp(0.75rem,2.5dvh,2.5rem)] md:px-6 xl:px-10"
               >
-                {body}
-              </Link>
-            ) : (
-              <article key={area.n} className={CELL_CLASS}>
-                {body}
-              </article>
-            );
-          })}
+                <span className="font-mono text-xs font-bold text-muted-foreground md:text-sm">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-2 text-lg leading-none font-bold tracking-tighter uppercase md:mt-3 md:text-2xl xl:text-3xl">
+                  {s.title}
+                </h3>
+                <p className="mt-3 hidden max-w-xs text-sm text-muted-foreground md:block lg:text-base [@media(max-height:760px)]:hidden">
+                  {s.body}
+                </p>
+              </li>
+            ))}
+          </ol>
         </section>
 
+        <section
+          className={`flex shrink-0 flex-wrap items-baseline gap-x-6 gap-y-1 border-t-2 border-border px-6 py-3 md:px-10 md:py-5 ${SHORT}`}
+        >
+          <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+            Not built yet
+          </h2>
+          <p className="text-xs text-muted-foreground md:text-sm">{NOT_BUILT.join(", ")}.</p>
+        </section>
       </main>
-
-      <footer className="border-t-2 border-border px-6 py-8 md:px-10">
-        <p className="text-xs tracking-widest text-muted-foreground uppercase">
-          Certifier Reloaded — demo build
-        </p>
-      </footer>
     </div>
   );
 }

@@ -169,7 +169,7 @@ export function NamingEditor({
                       }
                       className={FIELD}
                     >
-                      <option value="">— pick a column —</option>
+                      <option value="">Pick a column</option>
                       {columns.map((column) => (
                         <option key={column} value={column}>
                           {column}
@@ -296,7 +296,7 @@ export function NamingEditor({
         </ul>
       ) : (
         <p className="border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
-          No pattern set — the server names the files. Add a part to build your own.
+          No pattern set, so the server names the files. Add a part to build your own.
         </p>
       )}
 
