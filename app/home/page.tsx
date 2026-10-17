@@ -50,11 +50,11 @@ export default async function HomePage() {
             Signed in as <span className="text-foreground">{user.name || user.username}</span>
           </p>
           <h1
-            className={`${GAP} text-[clamp(1.75rem,min(12vw,11dvh),10rem)] leading-[0.85] font-bold tracking-tighter uppercase`}
+            className={`${GAP} text-[clamp(1.75rem,min(12vw,11dvh),10rem)] leading-[0.85] lg:text-[clamp(3rem,min(9vw,17dvh),11rem)] lg:leading-[0.8] font-bold tracking-tighter uppercase`}
           >
             Certificates
             <br />
-            <span className="inline-block bg-accent px-[0.15em] py-[0.03em] text-accent-foreground">
+            <span className="inline-block bg-accent px-[0.15em] py-[0.03em] text-accent-foreground lg:px-4 lg:py-1">
               In bulk
             </span>
           </h1>
