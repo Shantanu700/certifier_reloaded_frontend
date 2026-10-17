@@ -43,7 +43,10 @@ declare global {
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
 const FIELD_CLASS =
-  "mt-2 h-20 w-full border-b-2 border-border bg-transparent px-4 text-2xl font-bold tracking-tight outline-none focus:border-accent aria-[invalid]:border-destructive aria-[invalid]:focus:border-accent md:h-24 md:text-4xl";
+  "mt-2 h-[clamp(2.5rem,6.5dvh,5.5rem)] w-full min-w-0 border-b-2 border-border bg-transparent px-4 text-[clamp(1.125rem,3.2dvh,2.25rem)] font-bold tracking-tight outline-none focus:border-accent aria-[invalid]:border-destructive aria-[invalid]:focus:border-accent";
+
+// The page is locked to one viewport, so vertical rhythm scales with its height.
+const STACK = "space-y-[clamp(0.75rem,3dvh,2.5rem)]";
 
 const LABEL_CLASS =
   "block px-4 text-xs font-bold tracking-widest text-muted-foreground uppercase";
@@ -64,9 +67,14 @@ export default function LoginPage() {
   const error = googleError ?? state?.error;
   const invalid = state ? true : undefined;
 
-  function field(name: string, label: string, props: InputHTMLAttributes<HTMLInputElement>) {
+  function field(
+    name: string,
+    label: string,
+    props: InputHTMLAttributes<HTMLInputElement>,
+    className?: string
+  ) {
     return (
-      <div>
+      <div className={className}>
         <label htmlFor={name} className={LABEL_CLASS}>
           {label}
         </label>
@@ -104,14 +112,19 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col lg:flex-row">
-      <section className="relative flex flex-col justify-between overflow-hidden border-b-2 border-border lg:w-[55%] lg:border-r-2 lg:border-b-0">
-        <div className="p-6 md:p-10">
+    <div className="relative flex h-dvh flex-col overflow-hidden lg:flex-row">
+      <div className="absolute top-1.5 right-6 z-10 md:top-6.5 md:right-10">
+        <ThemeToggle />
+      </div>
+
+      <section className="flex shrink-0 flex-col border-b-2 border-border lg:w-[55%] lg:border-r-2 lg:border-b-0">
+        <div className="flex h-14 shrink-0 items-center px-6 md:h-24 md:px-10">
           <Wordmark />
         </div>
 
-        <div className="px-6 py-16 md:px-10 md:py-24">
-          <h1 className="text-[clamp(3rem,12vw,11rem)] leading-[0.8] font-bold tracking-tighter uppercase">
+        {/* On phones the form's own heading carries the page, so the poster is desktop-only. */}
+        <div className="flex flex-1 flex-col justify-center px-6 pb-24 max-lg:hidden md:px-10">
+          <h1 className="text-[clamp(3rem,min(9vw,17dvh),11rem)] leading-[0.8] font-bold tracking-tighter uppercase">
             Sign
             <br />
             <span className="inline-block bg-accent px-4 py-1 text-accent-foreground">
@@ -120,37 +133,37 @@ export default function LoginPage() {
             <br />
             To Issue
           </h1>
-          <p className="mt-8 max-w-md text-lg leading-tight text-muted-foreground md:text-xl">
+          <p className="mt-[clamp(1rem,4dvh,2rem)] max-w-md text-lg leading-tight text-muted-foreground md:text-xl">
             One design, one CSV, one certificate per row.
           </p>
         </div>
-
       </section>
 
-      <section className="flex flex-1 flex-col justify-between p-6 md:p-10 lg:p-16">
-        <div className="flex justify-end">
-          <ThemeToggle />
-        </div>
-
-        <div className="mx-auto my-auto w-full max-w-xl space-y-10 py-12">
+      {/* overflow-y-auto is only a fallback for tiny screens or an open keyboard. */}
+      <section className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 md:px-10 lg:px-16">
+        <div className={`mx-auto my-auto w-full max-w-xl py-[clamp(0.75rem,4dvh,3rem)] ${STACK}`}>
           <form
             key={mode}
             action={isRegister ? registerAction : loginAction}
             onSubmit={() => setGoogleError(undefined)}
-            className="space-y-10"
+            className={STACK}
           >
             <div>
-              <h2 className="text-4xl font-bold tracking-tighter uppercase md:text-6xl">
+              <h2 className="text-[clamp(2rem,6dvh,3.75rem)] leading-none font-bold tracking-tighter uppercase">
                 {isRegister ? "Join" : "Access"}
               </h2>
-              <p className="mt-3 text-base text-muted-foreground md:text-lg">
+              <p className="mt-3 text-base text-muted-foreground md:text-lg [@media(max-height:700px)]:hidden">
                 {isRegister
                   ? "Create an account to start issuing certificates."
                   : "Use your username and password."}
               </p>
             </div>
 
-            <fieldset disabled={pending} className="space-y-8 disabled:opacity-60">
+            {/* Sign-up pairs its fields two to a row so five fit where login's two do. */}
+            <fieldset
+              disabled={pending}
+              className="grid grid-cols-2 items-end gap-x-4 gap-y-[clamp(0.75rem,2.5dvh,2rem)] disabled:opacity-60"
+            >
               {isRegister &&
                 field("name", "Full name", { type: "text", autoComplete: "name", autoFocus: true })}
               {field("username", "Username", {
@@ -158,13 +171,14 @@ export default function LoginPage() {
                 autoComplete: "username",
                 autoFocus: !isRegister,
                 defaultValue: state?.username,
-              })}
-              {isRegister && field("email", "Email", { type: "email", autoComplete: "email" })}
+              }, isRegister ? undefined : "col-span-2")}
+              {isRegister &&
+                field("email", "Email", { type: "email", autoComplete: "email" }, "col-span-2")}
               {field("password", "Password", {
                 type: "password",
                 autoComplete: isRegister ? "new-password" : "current-password",
                 minLength: isRegister ? 8 : undefined,
-              })}
+              }, isRegister ? undefined : "col-span-2")}
               {isRegister &&
                 field("confirmPassword", "Confirm password", {
                   type: "password",
@@ -173,7 +187,7 @@ export default function LoginPage() {
                 })}
             </fieldset>
 
-            <p id="login-error" aria-live="polite" className="min-h-6">
+            <p id="login-error" aria-live="polite">
               {error ? (
                 <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
                   {error}
@@ -185,7 +199,7 @@ export default function LoginPage() {
               type="submit"
               disabled={pending}
               aria-busy={pending}
-              className="h-14 w-full gap-3 text-base tracking-tighter transition-transform hover:scale-[1.02] active:scale-95 md:h-16 md:text-lg"
+              className="h-12 w-full gap-3 text-base tracking-tighter transition-transform hover:scale-[1.02] active:scale-95 md:h-14 md:text-lg"
             >
               {pending
                 ? isRegister ? "Creating account…" : "Signing in…"
@@ -195,8 +209,8 @@ export default function LoginPage() {
           </form>
 
           {GOOGLE_CLIENT_ID && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
+            <div className="space-y-[clamp(0.75rem,2dvh,1.5rem)]">
+              <div className="flex items-center gap-4 [@media(max-height:600px)]:hidden">
                 <span className="h-0.5 flex-1 bg-border" />
                 <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
                   or
