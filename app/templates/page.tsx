@@ -59,9 +59,18 @@ export default async function TemplatesPage() {
         </div>
 
         <div className="border-t-2 border-border px-6 py-8 md:px-10 lg:border-t-0 lg:border-l-2">
-          <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-            New template
-          </h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
+            <h2 className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
+              New template
+            </h2>
+            <Link
+              href="/templates/canva"
+              className="tap inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Or import from Canva
+              <ArrowUpRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </div>
           <div className="mt-5">
             <TemplateForm
               row

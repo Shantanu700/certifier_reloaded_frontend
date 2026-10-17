@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, SlidersHorizontal } from "lucide-react";
 
-import { deleteTemplate, updateTemplate } from "@/app/actions";
+import { deleteTemplate, syncFromCanva, updateTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
 import { CsvPanel, GeneratePanel, MappingPanel } from "@/components/batch-panels";
 import { Modal } from "@/components/modal";
@@ -219,6 +219,24 @@ export default async function TemplatePage({
           </dd>
         </div>
       </dl>
+
+      {template.canva_design_id ? (
+        <form action={syncFromCanva} className="border-t-2 border-border pt-6">
+          <h3 className={RAIL_HEADING}>From Canva</h3>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Re-export page {template.canva_page ?? 1} of the Canva design after editing
+            it there. Boxes stay where they are, so the design&apos;s size must not change.
+          </p>
+          <input type="hidden" name="uuid" value={templateUuid} />
+          <SubmitButton
+            variant="outline"
+            pendingLabel="Refreshing…"
+            className="mt-5 h-12 w-full border-2"
+          >
+            Refresh from Canva
+          </SubmitButton>
+        </form>
+      ) : null}
 
       <div className="border-t-2 border-border pt-6">
         <h3 className={RAIL_HEADING}>Rename or replace</h3>
