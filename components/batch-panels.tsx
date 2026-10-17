@@ -196,14 +196,15 @@ function pageHref(
 const PAGER_LINK =
   "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3.5 hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
 
-function Pager({
-  templateUuid,
-  batch,
+/** Previous / Next links for any paginated list; `href` builds the URL for a given page number. */
+export function Pager({
   page,
+  href,
+  label,
 }: {
-  templateUuid: string;
-  batch?: CertificateBatch;
   page: PageInfo;
+  href: (page: number) => string;
+  label: string;
 }) {
   const ends = [
     { label: "Previous", to: page.page - 1, enabled: page.hasPrev },
@@ -212,14 +213,14 @@ function Pager({
 
   return (
     <nav
-      aria-label="Certificate pages"
+      aria-label={label}
       className="mt-4 flex items-center justify-between gap-3 border-2 border-border"
     >
       {ends.map(({ label, to, enabled }, i) =>
         enabled ? (
           <Link
             key={label}
-            href={pageHref(templateUuid, batch?.uuid, to, page.size)}
+            href={href(to)}
             rel={i === 0 ? "prev" : "next"}
             className={PAGER_LINK}
           >
@@ -440,7 +441,11 @@ export function GeneratePanel({
         )}
 
         {page && (page.hasPrev || page.hasNext) ? (
-          <Pager templateUuid={templateUuid} batch={batch} page={page} />
+          <Pager
+            page={page}
+            href={(to) => pageHref(templateUuid, batch?.uuid, to, page.size)}
+            label="Certificate pages"
+          />
         ) : null}
       </div>
 
