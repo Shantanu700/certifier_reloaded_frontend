@@ -98,7 +98,7 @@ export default async function TemplatesPage() {
         ) : (
           <section
             aria-label="Your templates"
-            className="grid sm:grid-cols-2 xl:grid-cols-3"
+            className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
           >
             {templates.map((template) => (
               <Link

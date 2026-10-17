@@ -194,7 +194,7 @@ function pageHref(
 }
 
 const PAGER_LINK =
-  "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
+  "px-3 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3.5 hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent";
 
 function Pager({
   templateUuid,
@@ -270,7 +270,7 @@ function PageSizes({
             href={pageHref(templateUuid, batch?.uuid, 1, size)}
             aria-current={size === page.size || undefined}
             className={cn(
-              "px-2.5 py-1 text-[0.625rem] font-bold tracking-widest tabular-nums focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+              "px-2.5 py-1 text-[0.625rem] font-bold tracking-widest tabular-nums pointer-coarse:px-3.5 pointer-coarse:py-3 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
               size === page.size
                 ? "bg-accent text-accent-foreground"
                 : "bg-background hover:bg-muted"
@@ -427,7 +427,7 @@ export function GeneratePanel({
                       href={url}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                      className="tap inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
                     >
                       Open
                       <Download className="size-3.5" aria-hidden="true" />

@@ -126,7 +126,7 @@ export function TemplateForm({
             : "space-y-8"
         }
       >
-        <p id={statusId} aria-live="polite" className="min-h-8 px-4">
+        <p id={statusId} aria-live="polite" className="min-h-8 px-4 empty:min-h-0">
           {oversize ? (
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">
               {oversize}
