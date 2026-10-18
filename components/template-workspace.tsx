@@ -9,7 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Image as ImageIcon, Plus, Trash2 } from "lucide-react";
+import { Image as ImageIcon, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
@@ -23,6 +23,7 @@ import {
   FONTS,
   GUIDE_FRACTIONS,
   HANDLES,
+  isQr,
   moveBox,
   nextKey,
   resizeBox,
@@ -41,7 +42,7 @@ import {
 import { uploadFile } from "@/lib/upload-client";
 import { IMAGE_TYPES } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
-import type { FontEnum, TemplateBox, TemplateImageBox } from "@/src/client";
+import type { BoxTypeEnum, FontEnum, TemplateBox, TemplateImageBox } from "@/src/client";
 
 export type EditorImageBox = TemplateImageBox & { imageUrl?: string };
 
@@ -99,6 +100,22 @@ const guideLabel = (line: number, size: number) =>
 // Snap reach in screen pixels, so it feels the same at any zoom.
 const SNAP_PX = 8;
 
+// Key prefix for a new box, and the tag it gets in the box list (text boxes get none).
+const TYPE_KEY: Record<BoxTypeEnum, string> = {
+  text: "field",
+  qr: "qr",
+  verify_qr: "verify_qr",
+  verify_code: "verify_code",
+};
+const TYPE_TAG: Partial<Record<BoxTypeEnum, string>> = {
+  qr: "QR",
+  verify_qr: "VERIFY QR",
+  verify_code: "CODE",
+};
+const TAG =
+  "shrink-0 border-2 border-current px-1 font-mono text-[0.5625rem] leading-4 tracking-widest opacity-70";
+const NOTE = "col-span-2 text-xs text-muted-foreground";
+
 function toEditorBox(box: TemplateBox, id: number): EditorBox {
   return {
     id,
@@ -113,6 +130,7 @@ function toEditorBox(box: TemplateBox, id: number): EditorBox {
     font_size: box.font_size ?? BOX_DEFAULTS.font_size,
     font_color: box.font_color ?? BOX_DEFAULTS.font_color,
     alignment: (box.alignment ?? BOX_DEFAULTS.alignment) as Alignment,
+    type: box.type ?? BOX_DEFAULTS.type,
   };
 }
 
@@ -142,6 +160,7 @@ function toDraft(box: Extract<EditorBox, { kind: "text" }>): BoxDraft {
     font_size: box.font_size,
     font_color: box.font_color,
     alignment: box.alignment,
+    type: box.type,
   };
 }
 
@@ -356,14 +375,35 @@ export function TemplateWorkspace({
     persist(box.id, undefined, moved); // `boxes` is still this render's copy
   };
 
-  const defaultRect = (): Rect | null => {
+  const defaultRect = (type: BoxTypeEnum = "text"): Rect | null => {
     const image = natural ?? measureImage();
     if (!image) {
       toast.error("The template image hasn't loaded yet. Try again in a moment.");
       return null;
     }
+    // QR codes start in the bottom-right corner, each new one to the left of the last.
+    if (isQr(type)) {
+      const side = Math.max(48, Math.round(Math.min(image.width, image.height) * 0.2));
+      const margin = Math.round(Math.min(image.width, image.height) * 0.05);
+      const slot = boxes.filter((b) => b.kind === "text" && isQr(b.type)).length % 3;
+      return {
+        x: Math.max(0, image.width - margin - side - slot * (side + margin)),
+        y: Math.max(0, image.height - margin - side),
+        width: side,
+        height: side,
+      };
+    }
     const width = Math.max(16, Math.round(image.width * 0.4));
     const height = Math.max(16, Math.round(image.height * 0.08));
+    // The code sits along the bottom edge, where certificate IDs usually go.
+    if (type === "verify_code") {
+      return {
+        x: Math.round((image.width - width) / 2),
+        y: Math.round(image.height * 0.9 - height),
+        width,
+        height,
+      };
+    }
     const offset = (boxes.length % 6) * Math.round(height * 0.6);
     return {
       x: Math.round((image.width - width) / 2),
@@ -373,16 +413,17 @@ export function TemplateWorkspace({
     };
   };
 
-  const addBox = () => {
-    const rect = defaultRect();
+  const addBox = (type: BoxTypeEnum = "text") => {
+    const rect = defaultRect(type);
     if (!rect) return;
     const id = nextId.current++;
     const box: EditorBox = {
       id,
       kind: "text",
-      key: nextKey(boxes, "field"),
+      key: nextKey(boxes, TYPE_KEY[type]),
       ...rect,
       ...BOX_DEFAULTS,
+      type,
     };
     setBoxes((all) => [...all, box]);
     setSelectedId(id);
@@ -533,6 +574,12 @@ export function TemplateWorkspace({
                             aria-hidden="true"
                           />
                         )
+                      ) : isQr(box.type) ? (
+                        <QrCode
+                          className="pointer-events-none h-full w-full p-[6%]"
+                          style={{ color: box.font_color }}
+                          aria-hidden="true"
+                        />
                       ) : (
                         <span
                           className="w-full truncate px-1"
@@ -544,7 +591,8 @@ export function TemplateWorkspace({
                             textAlign: box.alignment,
                           }}
                         >
-                          {box.key}
+                          {/* A sample code, so its size reads true; text boxes show their key. */}
+                          {box.type === "verify_code" ? "XXXX-XXXX-XXXX" : box.key}
                         </span>
                       )}
 
@@ -647,7 +695,7 @@ export function TemplateWorkspace({
                   ) : null}
                 </h3>
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={addBox}>
+                  <Button type="button" size="sm" variant="outline" onClick={() => addBox()}>
                     <Plus className="size-4" aria-hidden="true" />
                     Add box
                   </Button>
@@ -670,6 +718,23 @@ export function TemplateWorkspace({
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <p className={LABEL}>QR and verification (optional)</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("qr")}>
+                    <QrCode className="size-4" aria-hidden="true" />
+                    QR from CSV
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("verify_qr")}>
+                    <ShieldCheck className="size-4" aria-hidden="true" />
+                    Verify QR
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("verify_code")}>
+                    <ShieldCheck className="size-4" aria-hidden="true" />
+                    Verify code
+                  </Button>
+                </div>
+              </div>
 
               {boxes.length ? (
                 <ul className="grid gap-px bg-border">
@@ -687,9 +752,9 @@ export function TemplateWorkspace({
                       >
                         <span className="flex min-w-0 items-center gap-2">
                           {box.kind === "image" ? (
-                            <span className="shrink-0 border-2 border-current px-1 font-mono text-[0.5625rem] leading-4 tracking-widest opacity-70">
-                              IMG
-                            </span>
+                            <span className={TAG}>IMG</span>
+                          ) : TYPE_TAG[box.type] ? (
+                            <span className={TAG}>{TYPE_TAG[box.type]}</span>
                           ) : null}
                           <span className="truncate">{box.key}</span>
                         </span>
@@ -802,6 +867,28 @@ export function TemplateWorkspace({
                           mapped to a CSV column.
                         </p>
                       </div>
+                    ) : isQr(selected.type) ? (
+                      <>
+                        <label>
+                          <span className={LABEL}>Colour</span>
+                          <input
+                            type="color"
+                            value={selected.font_color}
+                            onChange={(e) =>
+                              patch(selected.id, { font_color: e.target.value })
+                            }
+                            onBlur={() => persist(selected.id)}
+                            className={cn(FIELD, "cursor-pointer p-1")}
+                          />
+                        </label>
+                        <p className={NOTE}>
+                          {selected.type === "verify_qr"
+                            ? "Opens the public verify page for each certificate. Filled in automatically, no CSV column needed."
+                            : "Encodes the text of the CSV column you map it to, like a text box."}{" "}
+                          The QR prints on a transparent background in a dark colour: keep it
+                          on a plain, light area of the artwork so phones can scan it.
+                        </p>
+                      </>
                     ) : (
                       <>
                     <label>
@@ -866,6 +953,14 @@ export function TemplateWorkspace({
                         }))}
                       />
                     </label>
+                    {selected.type === "verify_code" ? (
+                      <p className={NOTE}>
+                        Prints each certificate&apos;s verification code, for example
+                        7KQ2-M9XD-4TFA. Put a label such as &ldquo;Certificate ID&rdquo; in
+                        your artwork next to it. Anyone can check the code on the public
+                        verify page.
+                      </p>
+                    ) : null}
                       </>
                     )}
                   </div>
@@ -874,7 +969,7 @@ export function TemplateWorkspace({
                 <p className="border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
                   {boxes.length
                     ? "Pick a box to change its key, font or exact position. Drag to move, corners to resize, arrow keys to nudge."
-                    : "No boxes yet. Add a box for a value from your CSV, or an image that prints on every certificate, then drag it into place."}
+                    : "No boxes yet. Add a box for a value from your CSV, an image that prints on every certificate, or a QR or verification code, then drag it into place."}
                 </p>
               )}
             </section>

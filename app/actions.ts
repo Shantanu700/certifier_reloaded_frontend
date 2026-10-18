@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { templateFileUrl } from "@/components/template-preview";
 import {
   ALIGNMENTS,
+  BOX_TYPES,
   FONTS,
   type BoxDraft,
   type ImageBoxDraft,
@@ -460,6 +461,7 @@ function invalidBox(draft: BoxDraft) {
     return "Colour must be a hex value like #101010.";
   }
   if (!ALIGNMENTS.includes(draft.alignment)) return "Unknown alignment.";
+  if (!BOX_TYPES.includes(draft.type)) return "Unknown box type.";
 }
 
 export async function saveBox(
