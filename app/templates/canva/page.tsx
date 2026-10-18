@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 
 import { connectCanva, disconnectCanva, importCanvaDesign } from "@/app/actions";
@@ -7,7 +8,7 @@ import { CanvaQualitySlider } from "@/components/canva-quality-slider";
 import { SelectField } from "@/components/select-field";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
-import { requireIssuer, sessionHeader } from "@/lib/session";
+import { requireSession, sessionHeader } from "@/lib/session";
 import { getCanvaDesigns, getCanvaStatus, type CanvaDesign } from "@/src/client";
 
 const LABEL_CLASS =
@@ -30,7 +31,7 @@ const msgOf = (error: unknown, fallback: string) => {
 export default async function CanvaImportPage({
   searchParams,
 }: PageProps<"/templates/canva">) {
-  const { sessionId } = await requireIssuer();
+  const { sessionId } = await requireSession();
   const params = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   const q = one(params.q).trim();
@@ -41,8 +42,11 @@ export default async function CanvaImportPage({
   let designs: CanvaDesign[] = [];
   let next: string | null = null;
   let loadError: string | undefined;
+  let httpStatus: number | undefined;
   try {
     const status = await getCanvaStatus({ headers });
+    // The status call settles the session (401) and the role (403 for recipients) too.
+    httpStatus = status.response?.status;
     if (status.error) loadError = msgOf(status.error, "Couldn't check your Canva connection.");
     connected = Boolean(status.data?.connected);
 
@@ -60,6 +64,10 @@ export default async function CanvaImportPage({
   } catch {
     loadError = "Can't reach the server. Try again in a moment.";
   }
+
+  // Outside the try: redirect() works by throwing.
+  if (httpStatus === 401) redirect("/login");
+  if (httpStatus === 403) redirect("/certificates");
 
   const here = `/templates/canva${q || after ? `?${new URLSearchParams({ ...(q && { q }), ...(after && { after }) })}` : ""}`;
 

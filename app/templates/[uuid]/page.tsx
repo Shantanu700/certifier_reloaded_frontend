@@ -22,7 +22,7 @@ import {
 } from "@/components/template-workspace";
 import { asList, asMapping, asPageNumber, asPageSize, type PageInfo } from "@/lib/api";
 import { isMappable } from "@/lib/boxes";
-import { getSessionId, sessionHeader } from "@/lib/session";
+import { requireSession, sessionHeader } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
   listCertificateBatches,
@@ -79,11 +79,9 @@ export default async function TemplatePage({
   const filter = ISSUE_FILTERS.find((f) => f.id === filterParam)?.id;
   const step: StepId = isStep(stepParam) ? stepParam : "boxes";
   const showSettings = settingsParam === "1";
-  // No requireUser() here: the four calls below carry the session themselves,
-  // so a dead session shows up as a 401/403 on them and re-validating it first
-  // would just be a fifth Django round trip on every step navigation.
-  const sessionId = await getSessionId();
-  if (!sessionId) redirect("/login");
+  // The four calls below carry the session themselves, so a dead session shows up as a
+  // 401/403 on them; checking it first would be a fifth Django round trip per step.
+  const { sessionId } = await requireSession();
   const headers = sessionHeader(sessionId);
   const fetched = await Promise.all([
     retrieveCertificateTemplate({ path: { uuid }, headers }),
