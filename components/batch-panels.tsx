@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { Download, Play } from "lucide-react";
 
-import { deleteBatch, exportBatch, generateBatch, saveMapping } from "@/app/actions";
+import { deleteBatch, exportBatch, generateBatch, issueOne, saveMapping } from "@/app/actions";
 import { BatchProgress, ExportProgress } from "@/components/batch-progress";
 import { BatchStatus } from "@/components/batch-status";
 import { CsvUploadForm } from "@/components/csv-upload-form";
+import { SelectField } from "@/components/select-field";
 import { SubmitButton } from "@/components/submit-button";
 import { NamingEditor } from "@/components/naming-editor";
 import { templateFileUrl } from "@/components/template-preview";
@@ -33,10 +34,12 @@ export function CsvPanel({
   templateUuid,
   batches,
   selected,
+  boxes,
 }: {
   templateUuid: string;
   batches: CertificateBatch[];
   selected?: CertificateBatch;
+  boxes: TemplateBox[];
 }) {
   return (
     <section className="space-y-6">
@@ -44,6 +47,43 @@ export function CsvPanel({
         <h3 className={HEADING}>Upload recipients</h3>
         <CsvUploadForm templateUuid={templateUuid} />
       </div>
+
+      <details className="group border-2 border-border">
+        <summary className="cursor-pointer list-none px-5 py-3 text-xs font-bold tracking-widest uppercase transition-colors marker:content-none hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent">
+          <span className="flex items-center justify-between gap-4">
+            Or issue one by hand
+            <span aria-hidden="true" className="text-muted-foreground">
+              <span className="group-open:hidden">+</span>
+              <span className="hidden group-open:inline">−</span>
+            </span>
+          </span>
+        </summary>
+        <div className="border-t-2 border-border p-5">
+          {boxes.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Add a text box in step 01 first.</p>
+          ) : (
+            <form action={issueOne} className="space-y-4">
+              <input type="hidden" name="templateUuid" value={templateUuid} />
+              <p className="text-sm text-muted-foreground">
+                Type what each box should say. The certificate is made and issued straight away.
+              </p>
+              <label className="block">
+                <span className={HEADING}>Recipient email or username</span>
+                <input name="recipient" required maxLength={255} autoComplete="off" className={cn(SELECT_CLASS, "mt-2")} />
+              </label>
+              {boxes.map((box) => (
+                <label key={box.uuid ?? box.key} className="block">
+                  <span className={cn(HEADING, "break-all")}>{box.key}</span>
+                  <input name={`value:${box.key}`} maxLength={500} className={cn(SELECT_CLASS, "mt-2")} />
+                </label>
+              ))}
+              <SubmitButton pendingLabel="Issuing…" className="h-12 w-full">
+                Issue certificate
+              </SubmitButton>
+            </form>
+          )}
+        </div>
+      </details>
 
       <div>
         <h3 className={HEADING}>
@@ -54,7 +94,7 @@ export function CsvPanel({
             {batches.map((batch) => (
               <li key={batch.uuid} className="bg-background">
                 <Link
-                  href={`/templates/${templateUuid}?step=mapping&batch=${batch.uuid}`}
+                  href={`/templates/${templateUuid}?step=${batch.is_manual ? "issue" : "mapping"}&batch=${batch.uuid}`}
                   aria-current={batch.uuid === selected?.uuid || undefined}
                   className={cn(
                     "flex items-center justify-between gap-3 px-4 py-3 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
@@ -68,11 +108,15 @@ export function CsvPanel({
                       suppressHydrationWarning
                       className="block text-sm font-bold tracking-tight"
                     >
-                      {new Date(batch.created_at).toLocaleString(undefined, STAMP)}
+                      {batch.is_manual
+                        ? "Issued by hand"
+                        : new Date(batch.created_at).toLocaleString(undefined, STAMP)}
                     </span>
                     <span className="mt-1 block text-[0.6875rem] font-bold tracking-widest uppercase opacity-70">
-                      {batch.generation_status ?? "pending"}
-                      {batch.total_rows
+                      {batch.is_manual
+                        ? `${batch.total_rows ?? 0} certificate${batch.total_rows === 1 ? "" : "s"}`
+                        : batch.generation_status ?? "pending"}
+                      {!batch.is_manual && batch.total_rows
                         ? ` · ${batch.processed_rows ?? 0}/${batch.total_rows}`
                         : null}
                     </span>
@@ -105,6 +149,14 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         Upload a CSV first. There are no columns to map yet.
+      </p>
+    );
+  }
+  if (batch.is_manual) {
+    return (
+      <p className={NUDGE}>
+        These certificates were issued by hand, so there&apos;s no CSV to map. Manage them
+        under Issue.
       </p>
     );
   }
@@ -147,19 +199,13 @@ export function MappingPanel({
                 >
                   {box.key}
                 </label>
-                <select
+                <SelectField
                   id={`map-${box.key}`}
                   name={`map:${box.key}`}
                   defaultValue={byBox[box.key] ?? ""}
-                  className={SELECT_CLASS}
-                >
-                  <option value="">Not mapped</option>
-                  {columns.map((column) => (
-                    <option key={column} value={column}>
-                      {column}
-                    </option>
-                  ))}
-                </select>
+                  emptyLabel="Not mapped"
+                  options={columns.map((column) => ({ value: column, label: column }))}
+                />
               </li>
             ))}
           </ul>
@@ -181,6 +227,17 @@ export function MappingPanel({
       </div>
     </section>
   );
+}
+
+/**
+ * The first mapped column (usually the recipient's name) labels each row, so
+ * staff can tell whose certificate it is without counting CSV lines.
+ */
+export function certificateLabel(batch: CertificateBatch, cert: GeneratedCertificate) {
+  const labelColumn = Object.values(asMapping(batch.mapping))[0];
+  const data = cert.row_data as Record<string, unknown> | undefined;
+  const value = labelColumn ? data?.[labelColumn] : undefined;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function pageHref(
@@ -307,14 +364,7 @@ export function GeneratePanel({
   const exportStatus = batch.export_status ?? "pending";
   const total = batch.total_rows ?? 0;
   const failures = certificates.filter((c) => c.is_successful === false).length;
-  // The first mapped column (usually the recipient's name) labels each row, so
-  // staff can tell whose certificate it is without counting CSV lines.
-  const labelColumn = Object.values(asMapping(batch.mapping))[0];
-  const rowLabel = (cert: GeneratedCertificate) => {
-    const data = cert.row_data as Record<string, unknown> | undefined;
-    const value = labelColumn ? data?.[labelColumn] : undefined;
-    return typeof value === "string" && value.trim() ? value.trim() : null;
-  };
+  const rowLabel = (cert: GeneratedCertificate) => certificateLabel(batch, cert);
 
   return (
     <section className="space-y-8">

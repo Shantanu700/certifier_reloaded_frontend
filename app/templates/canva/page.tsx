@@ -4,9 +4,10 @@ import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import { connectCanva, disconnectCanva, importCanvaDesign } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
 import { CanvaQualitySlider } from "@/components/canva-quality-slider";
+import { SelectField } from "@/components/select-field";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
-import { requireUser, sessionHeader } from "@/lib/session";
+import { requireIssuer, sessionHeader } from "@/lib/session";
 import { getCanvaDesigns, getCanvaStatus, type CanvaDesign } from "@/src/client";
 
 const LABEL_CLASS =
@@ -29,7 +30,7 @@ const msgOf = (error: unknown, fallback: string) => {
 export default async function CanvaImportPage({
   searchParams,
 }: PageProps<"/templates/canva">) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireIssuer();
   const params = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   const q = one(params.q).trim();
@@ -180,13 +181,16 @@ export default async function CanvaImportPage({
                         <label htmlFor={`page-${design.id}`} className={LABEL_CLASS}>
                           Page
                         </label>
-                        <select id={`page-${design.id}`} name="page" defaultValue="1" className={`${FIELD_CLASS} w-20`}>
-                          {Array.from({ length: design.page_count ?? 1 }, (_, i) => (
-                            <option key={i + 1} value={i + 1}>
-                              {i + 1}
-                            </option>
-                          ))}
-                        </select>
+                        <SelectField
+                          id={`page-${design.id}`}
+                          name="page"
+                          defaultValue="1"
+                          className="mt-1 h-10 w-20"
+                          options={Array.from({ length: design.page_count ?? 1 }, (_, i) => ({
+                            value: String(i + 1),
+                            label: String(i + 1),
+                          }))}
+                        />
                       </div>
                     ) : null}
                   </div>

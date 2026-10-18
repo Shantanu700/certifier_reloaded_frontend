@@ -2,9 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ExternalLink, SlidersHorizontal } from "lucide-react";
 
-import { deleteTemplate, syncFromCanva, updateTemplate } from "@/app/actions";
+import { deleteTemplate, editCertificate, syncFromCanva, updateTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
 import { CsvPanel, GeneratePanel, MappingPanel } from "@/components/batch-panels";
+import { ISSUE_FILTERS, IssuePanel, type IssueFilter } from "@/components/issue-panel";
 import { Modal } from "@/components/modal";
 import { StepLink } from "@/components/step-link";
 import { SubmitButton } from "@/components/submit-button";
@@ -18,7 +19,7 @@ import {
   TemplateWorkspace,
   type EditorImageBox,
 } from "@/components/template-workspace";
-import { asList, asPageNumber, asPageSize, type PageInfo } from "@/lib/api";
+import { asList, asMapping, asPageNumber, asPageSize, type PageInfo } from "@/lib/api";
 import { getSessionId, sessionHeader } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -26,9 +27,12 @@ import {
   listGeneratedCertificates,
   listTemplateBoxes,
   listTemplateImageBoxes,
+  retrieveCertificateBatchIssuance,
   retrieveCertificateTemplate,
+  retrieveGeneratedCertificate,
   type CertificateBatch,
   type GeneratedCertificate,
+  type IssuanceCounts,
   type TemplateBox,
   type TemplateImageBox,
 } from "@/src/client";
@@ -48,6 +52,7 @@ const STEPS = [
   { id: "csv", label: "Upload CSV" },
   { id: "mapping", label: "Map columns" },
   { id: "generate", label: "Generate" },
+  { id: "issue", label: "Issue" },
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
@@ -66,7 +71,10 @@ export default async function TemplatePage({
     page: pageParam,
     size: sizeParam,
     settings: settingsParam,
+    filter: filterParam,
+    edit: editParam,
   } = await searchParams;
+  const filter = ISSUE_FILTERS.find((f) => f.id === filterParam)?.id;
   const step: StepId = isStep(stepParam) ? stepParam : "boxes";
   const showSettings = settingsParam === "1";
   // No requireUser() here: the four calls below carry the session themselves,
@@ -81,10 +89,10 @@ export default async function TemplatePage({
     listTemplateImageBoxes({ path: { template_uuid: uuid }, headers }),
     listCertificateBatches({ path: { template_uuid: uuid }, headers }),
   ]).catch(() => null);
-  // DRF answers an unauthenticated session with 403, not 401 — check both, and
-  // outside the catch above: redirect() works by throwing.
-  if (fetched?.some((r) => r.response?.status === 401 || r.response?.status === 403))
-    redirect("/login");
+  // 401 is a dead session; 403 is a logged-in recipient, who has no templates (/home sends
+  // them on). Checked outside the catch above: redirect() works by throwing.
+  if (fetched?.some((r) => r.response?.status === 401)) redirect("/login");
+  if (fetched?.some((r) => r.response?.status === 403)) redirect("/home");
 
   let boxes: TemplateBox[] = [];
   let imageBoxes: EditorImageBox[] = [];
@@ -107,8 +115,10 @@ export default async function TemplatePage({
   const ordered = [...batches].sort(
     (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
   );
+  // "manual" is where issuing one by hand lands: that action doesn't know the batch's uuid.
   const selectedBatch =
-    ordered.find((b) => b.uuid === batchParam) ?? ordered[0];
+    ordered.find((b) => (batchParam === "manual" ? b.is_manual : b.uuid === batchParam)) ??
+    ordered[0];
 
   let certificates: GeneratedCertificate[] = [];
   let certPage: PageInfo | undefined;
@@ -132,6 +142,41 @@ export default async function TemplatePage({
     } catch {}
   }
 
+  let counts: IssuanceCounts | undefined;
+  let editing: GeneratedCertificate | undefined;
+  const issueHref = (to: IssueFilter | undefined, page: number) =>
+    `/templates/${templateUuid}?step=issue&batch=${selectedBatch?.uuid}${to ? `&filter=${to}` : ""}${
+      page > 1 ? `&page=${page}` : ""
+    }&size=${asPageSize(sizeParam)}`;
+  const issueHere = issueHref(filter, asPageNumber(pageParam));
+  if (step === "issue" && selectedBatch?.uuid) {
+    const page = asPageNumber(pageParam);
+    const size = asPageSize(sizeParam);
+    try {
+      const [countResult, listResult, editResult] = await Promise.all([
+        retrieveCertificateBatchIssuance({ path: { uuid: selectedBatch.uuid }, headers }),
+        listGeneratedCertificates({
+          path: { uuid: selectedBatch.uuid },
+          headers,
+          query: { page, page_size: size, ...(filter && { filter }) },
+        }),
+        typeof editParam === "string"
+          ? retrieveGeneratedCertificate({ path: { uuid: editParam }, headers })
+          : undefined,
+      ]);
+      counts = countResult.data;
+      certificates = (listResult.data?.results ?? []).filter((cert) => cert?.uuid);
+      certPage = {
+        count: listResult.data?.count ?? certificates.length,
+        page,
+        size,
+        hasNext: Boolean(listResult.data?.next),
+        hasPrev: Boolean(listResult.data?.previous),
+      };
+      editing = editResult?.data;
+    } catch {}
+  }
+
   const href = (id: StepId) =>
     `/templates/${templateUuid}?step=${id}${
       selectedBatch?.uuid ? `&batch=${selectedBatch.uuid}` : ""
@@ -144,7 +189,7 @@ export default async function TemplatePage({
     <nav
       key="steps"
       aria-label="Steps"
-      className="grid shrink-0 grid-cols-2 gap-px border-b-2 border-border bg-border sm:grid-cols-4"
+      className="grid shrink-0 grid-cols-3 gap-px border-b-2 border-border bg-border sm:grid-cols-5"
     >
       {STEPS.map((s, i) => {
         const current = s.id === step;
@@ -178,6 +223,7 @@ export default async function TemplatePage({
         templateUuid={templateUuid}
         batches={ordered}
         selected={selectedBatch}
+        boxes={boxes}
       />
     ) : step === "mapping" ? (
       <MappingPanel
@@ -192,6 +238,52 @@ export default async function TemplatePage({
         certificates={certificates}
         page={certPage}
       />
+    ) : step === "issue" ? (
+      <IssuePanel
+        templateUuid={templateUuid}
+        batch={selectedBatch}
+        counts={counts}
+        certificates={certificates}
+        page={certPage}
+        filter={filter}
+        here={issueHere}
+        href={issueHref}
+      />
+    ) : null;
+
+  // Only boxes with text behind them can be edited: a CSV batch's unmapped boxes print nothing.
+  const mapping = asMapping(selectedBatch?.mapping);
+  const editRow = (editing?.row_data ?? {}) as Record<string, unknown>;
+  const editDialog =
+    step === "issue" && editing && selectedBatch ? (
+      <Modal closeHref={issueHere} label="Edit certificate text">
+        <form action={editCertificate} className="space-y-5">
+          <input type="hidden" name="templateUuid" value={templateUuid} />
+          <input type="hidden" name="batch" value={selectedBatch.uuid} />
+          <input type="hidden" name="uuid" value={editing.uuid} />
+          <input type="hidden" name="back" value={issueHere} />
+          <p className="text-sm text-muted-foreground">
+            Saving makes the certificate again with this text.
+            {editing.issue_status === "issued" ? " Its recipient sees the new version straight away." : null}
+          </p>
+          {boxes
+            .filter((box) => mapping[box.key])
+            .map((box) => (
+              <label key={box.uuid ?? box.key} className="block">
+                <span className={META_LABEL}>{box.key}</span>
+                <input
+                  name={`value:${box.key}`}
+                  maxLength={500}
+                  defaultValue={String(editRow[mapping[box.key]] ?? "")}
+                  className="mt-2 h-11 w-full border-2 border-border bg-transparent px-3 text-sm font-bold tracking-tight outline-none focus:border-accent"
+                />
+              </label>
+            ))}
+          <SubmitButton pendingLabel="Saving…" className="h-12 w-full">
+            Save and re-make
+          </SubmitButton>
+        </form>
+      </Modal>
     ) : null;
 
   const settings = (
@@ -341,9 +433,9 @@ export default async function TemplatePage({
               className="aspect-4/3 w-full bg-muted/40 lg:aspect-auto lg:min-h-0 lg:flex-1"
             />
           </div>
-          <div className="flex min-h-0 flex-col lg:overflow-y-auto">
+          <div className="flex min-h-0 flex-col">
             {tabs}
-            <div className="space-y-8 p-6 md:p-8">
+            <div className="relative min-h-0 flex-1 space-y-8 p-6 md:p-8 lg:overflow-y-auto">
               {step === "boxes" ? (
                 <p className="border-2 border-dashed border-border p-4 text-sm text-muted-foreground">
                   Text boxes can only be placed on a PNG or JPG. Replace the file
@@ -357,6 +449,7 @@ export default async function TemplatePage({
         </div>
       )}
 
+      {editDialog}
       {showSettings ? (
         <Modal closeHref={href(step)} label="Template settings">
           {settings}

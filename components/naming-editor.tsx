@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { ArrowDown, ArrowUp, GripVertical, Plus, Trash2 } from "lucide-react";
 
 import { saveNaming } from "@/app/actions";
+import { SelectField } from "@/components/select-field";
 import { SubmitButton } from "@/components/submit-button";
 import { Button } from "@/components/ui/button";
 import { MAX_RANDOM_LENGTH, NAMING_TYPES, asNamingParts } from "@/lib/api";
@@ -18,6 +19,9 @@ const LABEL =
   "block text-[0.625rem] font-bold tracking-widest text-muted-foreground uppercase";
 const FIELD =
   "mt-1 h-10 w-full border-2 border-border bg-transparent px-2 text-sm font-bold tracking-tight outline-none focus:border-accent";
+
+// Same box as FIELD, in the shared dropdown.
+const SELECT = "mt-1 h-10 px-2";
 
 const TYPE_LABEL: Record<PartType, string> = {
   csv_key: "CSV column",
@@ -143,39 +147,25 @@ export function NamingEditor({
               <div className="grid min-w-0 flex-1 grid-cols-2 gap-3">
                 <label className="col-span-2">
                   <span className={LABEL}>Part {index + 1}</span>
-                  <select
+                  <SelectField
                     value={row.type}
-                    onChange={(event) =>
-                      patch(row.id, blankPart(event.target.value as PartType, columns))
-                    }
-                    className={FIELD}
-                  >
-                    {NAMING_TYPES.map((type) => (
-                      <option key={type} value={type}>
-                        {TYPE_LABEL[type]}
-                      </option>
-                    ))}
-                  </select>
+                    onValueChange={(value) => patch(row.id, blankPart(value as PartType, columns))}
+                    className={SELECT}
+                    options={NAMING_TYPES.map((type) => ({ value: type, label: TYPE_LABEL[type] }))}
+                  />
                 </label>
 
                 {row.type === "csv_key" ? (
                   <label className="col-span-2">
                     <span className={LABEL}>Column</span>
-                    <select
+                    <SelectField
                       required
                       value={row.key}
-                      onChange={(event) =>
-                        patch(row.id, { type: "csv_key", key: event.target.value })
-                      }
-                      className={FIELD}
-                    >
-                      <option value="">Pick a column</option>
-                      {columns.map((column) => (
-                        <option key={column} value={column}>
-                          {column}
-                        </option>
-                      ))}
-                    </select>
+                      onValueChange={(key) => patch(row.id, { type: "csv_key", key })}
+                      placeholder="Pick a column"
+                      className={SELECT}
+                      options={columns.map((column) => ({ value: column, label: column }))}
+                    />
                   </label>
                 ) : null}
 
@@ -226,19 +216,17 @@ export function NamingEditor({
                   <>
                     <label>
                       <span className={LABEL}>Kind</span>
-                      <select
+                      <SelectField
                         value={row.kind ?? "string"}
-                        onChange={(event) =>
-                          patch(row.id, {
-                            ...row,
-                            kind: event.target.value as "string" | "number",
-                          })
+                        onValueChange={(kind) =>
+                          patch(row.id, { ...row, kind: kind as "string" | "number" })
                         }
-                        className={FIELD}
-                      >
-                        <option value="string">Letters</option>
-                        <option value="number">Digits</option>
-                      </select>
+                        className={SELECT}
+                        options={[
+                          { value: "string", label: "Letters" },
+                          { value: "number", label: "Digits" },
+                        ]}
+                      />
                     </label>
                     <label>
                       <span className={LABEL}>Length</span>

@@ -17,6 +17,7 @@ import { SESSION_COOKIE, requireUser, sessionHeader } from "@/lib/session";
 import {
   deleteCanvaConnection,
   deleteCertificateBatches,
+  deleteCertificates,
   deleteCertificateTemplate,
   deleteCertificateTemplateBoxes,
   deleteCertificateTemplateImageBoxes,
@@ -24,16 +25,24 @@ import {
   getCanvaConnect,
   postCertificateBatchesExport,
   postCertificateBatchesGenerate,
+  postCertificateBatchesIssue,
+  postCertificateBatchesMatch,
+  postCertificateBatchesRevoke,
+  postCertificatesRevoke,
   postCertificateTemplate,
   postCertificateTemplateBatches,
   postCertificateTemplateBoxes,
   postCertificateTemplateCanvaSync,
   postCertificateTemplateImageBoxes,
   postCertificateTemplateImportCanva,
+  postCertificateTemplateIssueOne,
   postCoreGoogle,
   postCoreLogin,
   postCoreRegister,
   postCoreUploadUrl,
+  postCoreVerifyEmailResend,
+  putCertificates,
+  putCoreProfile,
   putCertificateBatchesMapping,
   putCertificateBatchesNaming,
   retrieveCertificateBatchExportProgress,
@@ -44,6 +53,7 @@ import {
   type CanvaTemplateImportResult,
   type PresignUploadRequest,
   type PresignUploadResponse,
+  type RoleEnum,
   type TemplateBox,
   type TemplateImageBox,
 } from "@/src/client";
@@ -124,7 +134,9 @@ export async function register(
   const field = (name: string) => String(formData.get(name) ?? "").trim();
   const username = field("username");
   const password = String(formData.get("password") ?? "");
+  const role = asRole(formData.get("role"));
 
+  if (!role) return { error: "Choose whether you issue or receive certificates.", username };
   if (password !== String(formData.get("confirmPassword") ?? "")) {
     return { error: "Those two passwords don't match.", username };
   }
@@ -132,7 +144,7 @@ export async function register(
   let result;
   try {
     result = await postCoreRegister({
-      body: { username, name: field("name"), email: field("email"), password },
+      body: { username, name: field("name"), email: field("email"), password, role },
     });
   } catch {
     return { error: "Can't reach the server. Try again in a moment.", username };
@@ -146,14 +158,27 @@ export async function register(
     };
   }
 
-  return { error: await startSession(result.response, "Account created."), username };
+  return {
+    error: await startSession(
+      result.response,
+      "Account created. Check your inbox for a link to verify your email."
+    ),
+    username,
+  };
 }
 
-/** Called from the Google button's callback with the ID token (credential) Google hands the browser. */
-export async function googleLogin(idToken: string): Promise<string> {
+const asRole = (value: unknown): RoleEnum | undefined =>
+  value === "issuer" || value === "recipient" ? value : undefined;
+
+/**
+ * Called from the Google button's callback with the ID token (credential) Google hands the browser.
+ * `role` is sent from sign-up mode; the backend only needs it when the account is new.
+ */
+export async function googleLogin(idToken: string, role?: string): Promise<string> {
+  const chosen = asRole(role);
   let result;
   try {
-    result = await postCoreGoogle({ body: { id_token: idToken } });
+    result = await postCoreGoogle({ body: { id_token: idToken, ...(chosen && { role: chosen }) } });
   } catch {
     return "Can't reach the server. Try again in a moment.";
   }
@@ -786,4 +811,225 @@ export async function deleteBatch(formData: FormData) {
   revalidatePath(`/templates/${templateUuid}`);
   await flash("success", "Batch deleted.");
   redirect(stepUrl(templateUuid, "csv"));
+}
+
+/** The issue step URL the form came from (keeps its filter and page), or the step itself. */
+function issueBack(formData: FormData, templateUuid: string, batchUuid: string) {
+  const back = String(formData.get("back") ?? "");
+  // Only our own template pages: never redirect to a URL a form field could point elsewhere.
+  return back.startsWith(`/templates/${templateUuid}?`) ? back : stepUrl(templateUuid, "issue", batchUuid);
+}
+
+/** `value:<box key>` fields → { key: text }. */
+function boxValues(formData: FormData) {
+  const values: Record<string, string> = {};
+  for (const [field, value] of formData.entries()) {
+    if (field.startsWith("value:") && typeof value === "string") values[field.slice(6)] = value.trim();
+  }
+  return values;
+}
+
+async function issuanceCall(
+  here: string,
+  call: (headers: { Cookie: string }) => Promise<{ error?: unknown }>,
+  fallback: string
+) {
+  const { sessionId } = await requireUser();
+  let error: unknown;
+  try {
+    error = (await call(sessionHeader(sessionId))).error;
+  } catch {
+    error = { msg: "Can't reach the server. Try again in a moment." };
+  }
+  if (error) {
+    console.error("issuance call failed", error);
+    return fail(here, messageFrom(error, fallback));
+  }
+}
+
+export async function matchRecipients(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, uuid);
+
+  const match_fields: Record<string, string> = {};
+  for (const [field, value] of formData.entries()) {
+    if (field.startsWith("match:") && typeof value === "string" && value) match_fields[field.slice(6)] = value;
+  }
+  if (!Object.keys(match_fields).length) return fail(here, "Pick at least one column to match on.");
+
+  await issuanceCall(
+    here,
+    (headers) =>
+      postCertificateBatchesMatch({
+        path: { uuid },
+        body: { match_fields, overwrite: formData.get("overwrite") === "on" },
+        headers,
+      }),
+    "Matching failed. Please try again."
+  );
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Recipients matched. Check the list, then issue.");
+  redirect(stepUrl(templateUuid, "issue", uuid));
+}
+
+export async function issueBatch(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, uuid);
+
+  await issuanceCall(here, (headers) => postCertificateBatchesIssue({ path: { uuid }, headers }), "Couldn't issue.");
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Certificates issued. Recipients can see them now.");
+  redirect(here);
+}
+
+export async function revokeBatch(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, uuid);
+
+  await issuanceCall(here, (headers) => postCertificateBatchesRevoke({ path: { uuid }, headers }), "Couldn't revoke.");
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Every issued certificate in this batch is revoked.");
+  redirect(here);
+}
+
+/** Assign (or clear, with a blank recipient) one draft certificate's recipient. */
+export async function assignCertificate(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const batch = String(formData.get("batch") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, batch);
+  const recipient = String(formData.get("recipient") ?? "").trim();
+
+  await issuanceCall(
+    here,
+    (headers) => putCertificates({ path: { uuid }, body: { recipient: recipient || null }, headers }),
+    "Couldn't change the recipient."
+  );
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", recipient ? "Recipient assigned." : "Recipient removed.");
+  redirect(here);
+}
+
+/** Save edited box text from the edit dialog; the backend re-renders the certificate. */
+export async function editCertificate(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const batch = String(formData.get("batch") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, batch);
+  // On failure, reopen the dialog so the typed values are one click away.
+  const dialog = `${here}&edit=${uuid}`;
+
+  await issuanceCall(
+    dialog,
+    (headers) => putCertificates({ path: { uuid }, body: { values: boxValues(formData) }, headers }),
+    "Couldn't save those changes."
+  );
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Certificate updated.");
+  redirect(here);
+}
+
+export async function deleteCertificate(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const batch = String(formData.get("batch") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, batch);
+
+  await issuanceCall(here, (headers) => deleteCertificates({ path: { uuid }, headers }), "Delete failed.");
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Certificate deleted.");
+  redirect(here);
+}
+
+export async function revokeCertificate(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  const batch = String(formData.get("batch") ?? "");
+  const uuid = String(formData.get("uuid") ?? "");
+  if (!templateUuid || !uuid) redirect("/templates");
+  const here = issueBack(formData, templateUuid, batch);
+
+  await issuanceCall(here, (headers) => postCertificatesRevoke({ path: { uuid }, headers }), "Couldn't revoke.");
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", "Certificate revoked.");
+  redirect(here);
+}
+
+/** Render one certificate from typed values and issue it; it lands in the template's "Issued by hand" batch. */
+export async function issueOne(formData: FormData) {
+  const templateUuid = String(formData.get("templateUuid") ?? "");
+  if (!templateUuid) redirect("/templates");
+  const here = stepUrl(templateUuid, "csv");
+  const recipient = String(formData.get("recipient") ?? "").trim();
+  if (!recipient) return fail(here, "Enter the recipient's email or username.");
+
+  await issuanceCall(
+    here,
+    (headers) =>
+      postCertificateTemplateIssueOne({
+        path: { uuid: templateUuid },
+        body: { recipient, values: boxValues(formData) },
+        headers,
+      }),
+    "Couldn't issue that certificate."
+  );
+  revalidatePath(`/templates/${templateUuid}`);
+  await flash("success", `Certificate issued to ${recipient}.`);
+  redirect(stepUrl(templateUuid, "issue", "manual"));
+}
+
+// `values` echoes a failed submission: React resets the form after an action, and the
+// typed values would otherwise vanish.
+export type ProfileState = { error: string; values: Record<string, string> } | { saved: true } | null;
+
+export async function updateProfile(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
+  const { sessionId } = await requireUser();
+  const field = (name: string) => String(formData.get(name) ?? "").trim();
+  const values = Object.fromEntries(
+    ["name", "roll_number", "phone", "date_of_birth", "institution"].map((name) => [name, field(name)])
+  );
+
+  let result;
+  try {
+    result = await putCoreProfile({
+      body: { ...values, name: values.name, date_of_birth: values.date_of_birth || null },
+      headers: sessionHeader(sessionId),
+    });
+  } catch {
+    return { error: "Can't reach the server. Try again in a moment.", values };
+  }
+
+  if (result.error) {
+    console.error("profile save failed", result.response?.status, result.error);
+    return { error: messageFrom(result.error, "Couldn't save your profile."), values };
+  }
+
+  revalidatePath("/profile");
+  return { saved: true };
+}
+
+export async function resendVerification() {
+  const { sessionId } = await requireUser();
+
+  let error: unknown;
+  let message = "Verification email sent.";
+  try {
+    const result = await postCoreVerifyEmailResend({ headers: sessionHeader(sessionId) });
+    error = result.error;
+    if (result.data?.msg) message = result.data.msg;
+  } catch {
+    error = { msg: "Can't reach the server. Try again in a moment." };
+  }
+
+  if (error) return fail("/profile", messageFrom(error, "Couldn't send the email."));
+  await flash("success", message);
+  redirect("/profile");
 }

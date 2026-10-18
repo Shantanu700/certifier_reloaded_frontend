@@ -9,7 +9,7 @@ import { TemplateForm } from "@/components/template-form";
 import { TemplatePreview } from "@/components/template-preview";
 import { Button } from "@/components/ui/button";
 import { asList, asPageNumber, type PageInfo } from "@/lib/api";
-import { requireUser, sessionHeader } from "@/lib/session";
+import { requireIssuer, sessionHeader } from "@/lib/session";
 import {
   listCertificateTemplates,
   type CertificateTemplate,
@@ -32,7 +32,7 @@ const listHref = (q: string, page: number) => {
 export default async function TemplatesPage({
   searchParams,
 }: PageProps<"/templates">) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireIssuer();
   const params = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   // Matching happens in Django (?search=); this page only forwards the text and renders what comes back.
@@ -128,51 +128,51 @@ export default async function TemplatesPage({
         </div>
       </section>
 
-      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        <form
-          action="/templates"
-          role="search"
-          className="flex flex-wrap items-end gap-3 border-b-2 border-border px-6 py-4 md:px-10"
-        >
-          <div className="min-w-0 basis-full sm:max-w-sm sm:flex-1 sm:basis-0">
-            <label
-              htmlFor="template-search"
-              className="block text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase"
-            >
-              Search templates
-            </label>
-            <input
-              id="template-search"
-              name="q"
-              type="search"
-              maxLength={255}
-              defaultValue={q}
-              placeholder="Template name"
-              className="mt-1 h-11 w-full border-b-2 border-border bg-transparent px-2 text-base font-bold tracking-tight outline-none focus:border-accent"
-            />
-          </div>
-          <Button type="submit" variant="outline" className="h-11 gap-2 border-2 px-6">
-            <Search className="size-4" aria-hidden="true" />
-            Search
-          </Button>
-          {q ? (
-            <Link
-              href="/templates"
-              className="tap inline-flex h-11 items-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-            >
-              Clear search
-            </Link>
-          ) : null}
-          {page && (page.hasPrev || page.hasNext) ? (
-            <Pager
-              page={page}
-              href={(to) => listHref(q, to)}
-              label="Template pages"
-              className="mt-0 ml-auto h-11"
-            />
-          ) : null}
-        </form>
+      <form
+        action="/templates"
+        role="search"
+        className="flex shrink-0 flex-wrap items-end gap-3 border-b-2 border-border px-6 py-4 md:px-10"
+      >
+        <div className="min-w-0 basis-full sm:max-w-sm sm:flex-1 sm:basis-0">
+          <label
+            htmlFor="template-search"
+            className="block text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase"
+          >
+            Search templates
+          </label>
+          <input
+            id="template-search"
+            name="q"
+            type="search"
+            maxLength={255}
+            defaultValue={q}
+            placeholder="Template name"
+            className="mt-1 h-11 w-full border-b-2 border-border bg-transparent px-2 text-base font-bold tracking-tight outline-none focus:border-accent"
+          />
+        </div>
+        <Button type="submit" variant="outline" className="h-11 gap-2 border-2 px-6">
+          <Search className="size-4" aria-hidden="true" />
+          Search
+        </Button>
+        {q ? (
+          <Link
+            href="/templates"
+            className="tap inline-flex h-11 items-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Clear search
+          </Link>
+        ) : null}
+        {page && (page.hasPrev || page.hasNext) ? (
+          <Pager
+            page={page}
+            href={(to) => listHref(q, to)}
+            label="Template pages"
+            className="mt-0 ml-auto h-11"
+          />
+        ) : null}
+      </form>
 
+      <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
         {loadError ? (
           <p className="px-6 pt-8 md:px-10" role="alert">
             <span className="inline-block bg-destructive px-3 py-1.5 text-sm font-bold tracking-widest text-background uppercase">

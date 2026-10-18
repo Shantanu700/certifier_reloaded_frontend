@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
 import { Loader } from "@/components/loader";
+import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
 import {
   ALIGNMENTS,
@@ -46,6 +47,9 @@ const LABEL =
   "block text-[0.625rem] font-bold tracking-widest text-muted-foreground uppercase";
 const FIELD =
   "mt-1 h-10 w-full border-2 border-border bg-transparent px-2 text-sm font-bold tracking-tight outline-none focus:border-accent";
+
+// Same box as FIELD, in the shared dropdown.
+const SELECT = "mt-1 h-10 px-2";
 
 const FONT_STACK: Record<FontEnum, string> = {
   "sans-regular": "var(--font-sans), sans-serif",
@@ -199,9 +203,11 @@ export function TemplateWorkspace({
       all.map((b) => (b.id === id ? ({ ...b, ...changes } as EditorBox) : b))
     );
 
-  const persist = (id: number, image?: File) => {
-    const box = boxes.find((b) => b.id === id);
-    if (!box) return;
+  // `changes` is for a value set in the same handler: `boxes` here is still this render's copy.
+  const persist = (id: number, image?: File, changes?: BoxPatch) => {
+    const found = boxes.find((b) => b.id === id);
+    if (!found) return;
+    const box = { ...found, ...changes } as EditorBox;
     startTransition(async () => {
       let upload: string | undefined;
       if (image) {
@@ -491,10 +497,10 @@ export function TemplateWorkspace({
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-col lg:overflow-y-auto">
+      <div className="flex min-h-0 flex-col">
         {tabs}
 
-        <div className="space-y-8 p-6 md:p-8">
+        <div className="relative min-h-0 flex-1 space-y-8 p-6 md:p-8 lg:overflow-y-auto">
           {editing ? (
             <section className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
@@ -667,20 +673,16 @@ export function TemplateWorkspace({
                       <>
                     <label>
                       <span className={LABEL}>Font</span>
-                      <select
+                      <SelectField
                         value={selected.font}
-                        onChange={(e) =>
-                          patch(selected.id, { font: e.target.value as FontEnum })
-                        }
-                        onBlur={() => persist(selected.id)}
-                        className={FIELD}
-                      >
-                        {FONTS.map((font) => (
-                          <option key={font} value={font}>
-                            {font}
-                          </option>
-                        ))}
-                      </select>
+                        onValueChange={(value) => {
+                          const font = value as FontEnum;
+                          patch(selected.id, { font });
+                          persist(selected.id, undefined, { font });
+                        }}
+                        className={SELECT}
+                        options={FONTS.map((font) => ({ value: font, label: font }))}
+                      />
                     </label>
 
                     <label>
@@ -717,22 +719,19 @@ export function TemplateWorkspace({
 
                     <label>
                       <span className={LABEL}>Align</span>
-                      <select
+                      <SelectField
                         value={selected.alignment}
-                        onChange={(e) =>
-                          patch(selected.id, {
-                            alignment: e.target.value as Alignment,
-                          })
-                        }
-                        onBlur={() => persist(selected.id)}
-                        className={FIELD}
-                      >
-                        {ALIGNMENTS.map((alignment) => (
-                          <option key={alignment} value={alignment}>
-                            {alignment}
-                          </option>
-                        ))}
-                      </select>
+                        onValueChange={(value) => {
+                          const alignment = value as Alignment;
+                          patch(selected.id, { alignment });
+                          persist(selected.id, undefined, { alignment });
+                        }}
+                        className={SELECT}
+                        options={ALIGNMENTS.map((alignment) => ({
+                          value: alignment,
+                          label: alignment[0].toUpperCase() + alignment.slice(1),
+                        }))}
+                      />
                     </label>
                       </>
                     )}

@@ -25,3 +25,10 @@ export async function requireUser() {
 
   return { user, sessionId };
 }
+
+/** Issuer-only pages: a recipient has nothing to do there, so send them to their certificates. */
+export async function requireIssuer() {
+  const session = await requireUser();
+  if (session.user.role === "recipient") redirect("/certificates");
+  return session;
+}

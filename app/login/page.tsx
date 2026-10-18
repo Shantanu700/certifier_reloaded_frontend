@@ -56,12 +56,23 @@ const LABEL_CLASS =
 
 type Mode = "login" | "register";
 
+const ROLES = [
+  { value: "issuer", label: "Issue certificates" },
+  { value: "recipient", label: "Receive certificates" },
+] as const;
+
 export default function LoginPage() {
   const [mode, setMode] = useState<Mode>("login");
   const [loginState, loginAction, loginPending] = useActionState(login, null);
   const [registerState, registerAction, registerPending] = useActionState(register, null);
   const [googlePending, startGoogle] = useTransition();
   const googleRef = useRef<HTMLDivElement>(null);
+  // Google's callback is bound once when its script loads, so it reads the live choice from refs.
+  const [role, setRole] = useState("");
+  const googleChoice = useRef({ isRegister: false, role: "" });
+  useEffect(() => {
+    googleChoice.current = { isRegister: mode === "register", role };
+  }, [mode, role]);
 
   const isRegister = mode === "register";
   const state = isRegister ? registerState : loginState;
@@ -107,8 +118,13 @@ export default function LoginPage() {
       client_id: GOOGLE_CLIENT_ID,
       callback: ({ credential }) =>
         startGoogle(async () => {
+          const { isRegister, role } = googleChoice.current;
+          if (isRegister && !role) {
+            toast.error("Choose whether you issue or receive certificates first.");
+            return;
+          }
           // Resolves only on failure; on success the action redirects to /home.
-          toast.error(await googleLogin(credential));
+          toast.error(await googleLogin(credential, isRegister ? role : undefined));
         }),
     });
     google.accounts.id.renderButton(googleRef.current, {
@@ -166,7 +182,7 @@ export default function LoginPage() {
               </h2>
               <p className="mt-3 text-base text-muted-foreground md:text-lg [@media(max-height:700px)]:hidden">
                 {isRegister
-                  ? "Create an account to start issuing certificates."
+                  ? "Issue certificates, or receive the ones issued to you."
                   : "Use your username and password."}
               </p>
             </div>
@@ -176,8 +192,29 @@ export default function LoginPage() {
               disabled={pending}
               className="grid grid-cols-2 items-end gap-x-4 gap-y-[clamp(0.75rem,2.5dvh,2rem)] disabled:opacity-60"
             >
+              {isRegister && (
+                <div role="radiogroup" aria-label="I want to" className="col-span-2 grid grid-cols-2 gap-px border-2 border-border bg-border">
+                  {ROLES.map((r) => (
+                    <label
+                      key={r.value}
+                      className="flex cursor-pointer items-center justify-center bg-background px-3 py-[clamp(0.5rem,1.6dvh,1rem)] text-center text-xs font-bold tracking-widest uppercase transition-colors has-checked:bg-accent has-checked:text-accent-foreground has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent not-has-checked:hover:bg-muted"
+                    >
+                      <input
+                        type="radio"
+                        name="role"
+                        value={r.value}
+                        required
+                        checked={role === r.value}
+                        onChange={() => setRole(r.value)}
+                        className="sr-only"
+                      />
+                      {r.label}
+                    </label>
+                  ))}
+                </div>
+              )}
               {isRegister &&
-                field("name", "Full name", { type: "text", autoComplete: "name", autoFocus: true })}
+                field("name", "Full name", { type: "text", autoComplete: "name" })}
               {field("username", "Username", {
                 type: "text",
                 autoComplete: "username",

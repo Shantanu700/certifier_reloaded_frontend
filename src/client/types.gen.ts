@@ -108,6 +108,7 @@ export type CertificateBatch = {
     status?: number;
     readonly created_at: string;
     readonly updated_at: string;
+    is_manual?: boolean;
     csv_columns?: unknown;
     mapping?: unknown;
     naming_convention?: unknown;
@@ -118,6 +119,10 @@ export type CertificateBatch = {
     export_status?: ExportStatusEnum;
     export_processed_rows?: number;
     export_error_message?: string;
+    /**
+     * {recipient_field: csv_column} used to find recipients.
+     */
+    match_fields?: unknown;
 };
 
 /**
@@ -157,6 +162,19 @@ export type CertificateBatchUpload = {
     upload: string;
 };
 
+export type CertificateMatch = {
+    /**
+     * {recipient_field: csv_column}; fields: email, username, roll_number, phone, date_of_birth, institution. A row matches when all agree.
+     */
+    match_fields: {
+        [key: string]: string;
+    };
+    /**
+     * Also re-match drafts that already have a recipient.
+     */
+    overwrite?: boolean;
+};
+
 export type CertificateTemplate = {
     readonly id: number;
     file?: FileObject;
@@ -183,6 +201,19 @@ export type CertificateTemplateUpload = {
      * uuid returned by POST core/upload-url/ after the file has been uploaded to S3.
      */
     upload: string;
+};
+
+export type CertificateUpdate = {
+    /**
+     * Exact email or username; null/blank clears it.
+     */
+    recipient?: string | null;
+    /**
+     * {box_key: text}; the certificate is re-rendered.
+     */
+    values?: {
+        [key: string]: string;
+    };
 };
 
 /**
@@ -241,6 +272,7 @@ export type FontEnum = 'sans-regular' | 'sans-bold' | 'serif-regular';
 
 export type GeneratedCertificate = {
     readonly id: number;
+    recipient: RecipientSummary | null;
     file?: FileObject;
     uuid?: string;
     status?: number;
@@ -250,6 +282,13 @@ export type GeneratedCertificate = {
     row_data?: unknown;
     is_successful?: boolean;
     error_message?: string;
+    issue_status?: IssueStatusEnum;
+    /**
+     * Why matching left it unassigned.
+     */
+    match_error?: string;
+    issued_at?: string | null;
+    revoked_at?: string | null;
 };
 
 /**
@@ -263,8 +302,51 @@ export type GeneratedCertificate = {
 export type GenerationStatusEnum = 'pending' | 'mapped' | 'queued' | 'processing' | 'completed' | 'failed';
 
 export type GoogleAuth = {
-    id_token: string;
+    /**
+     * Required the first time, when the account is created.
+     *
+     * * `issuer` - Issuer
+     * * `recipient` - Recipient
+     */
+    role?: RoleEnum;
 };
+
+export type IssuanceCounts = {
+    /**
+     * Draft, rendered, no recipient yet.
+     */
+    unassigned: number;
+    /**
+     * Draft with a recipient; issued by the next Issue.
+     */
+    ready: number;
+    issued: number;
+    revoked: number;
+    /**
+     * Draft that failed to render; can't be issued until fixed.
+     */
+    failed: number;
+};
+
+export type IssueOne = {
+    /**
+     * Exact email or username of a verified recipient.
+     */
+    recipient: string;
+    /**
+     * {box_key: text}
+     */
+    values: {
+        [key: string]: string;
+    };
+};
+
+/**
+ * * `draft` - Draft
+ * * `issued` - Issued
+ * * `revoked` - Revoked
+ */
+export type IssueStatusEnum = 'draft' | 'issued' | 'revoked';
 
 /**
  * * `string` - string
@@ -280,6 +362,15 @@ export type Login = {
     username: string;
     name: string;
     email?: string | null;
+    role?: RoleEnum;
+    email_verified?: boolean;
+    roll_number?: string;
+    /**
+     * Digits only, last 10.
+     */
+    phone?: string;
+    date_of_birth?: string | null;
+    institution?: string;
 };
 
 export type NamingPart = ({
@@ -311,6 +402,13 @@ export type PaginatedGeneratedCertificate = {
     next: string | null;
     previous: string | null;
     results: Array<GeneratedCertificate>;
+};
+
+export type PaginatedReceivedCertificate = {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Array<ReceivedCertificate>;
 };
 
 export type PaginatedTemplateBox = {
@@ -345,6 +443,19 @@ export type PresignUploadResponse = {
     expires_in: number;
 };
 
+export type Profile = {
+    readonly uuid: string;
+    readonly username: string;
+    readonly email: string | null;
+    role: RoleEnum;
+    readonly email_verified: boolean;
+    name: string;
+    roll_number?: string;
+    phone?: string;
+    date_of_birth?: string | null;
+    institution?: string;
+};
+
 export type RandomPart = {
     type: RandomPartTypeEnum;
     kind?: KindEnum;
@@ -356,11 +467,43 @@ export type RandomPart = {
  */
 export type RandomPartTypeEnum = 'random';
 
+/**
+ * A recipient's view of a certificate issued to them.
+ */
+export type ReceivedCertificate = {
+    uuid?: string;
+    file?: FileObject;
+    issue_status?: IssueStatusEnum;
+    issued_at?: string | null;
+    revoked_at?: string | null;
+    readonly template_name: string;
+    readonly issuer_name: string;
+};
+
+/**
+ * What an issuer sees of a recipient -- never phone or date of birth.
+ */
+export type RecipientSummary = {
+    uuid?: string;
+    name: string;
+    username: string;
+    email?: string | null;
+    roll_number?: string;
+    institution?: string;
+};
+
 export type Register = {
     username: string;
     name: string;
     email: string;
+    role: RoleEnum;
 };
+
+/**
+ * * `issuer` - Issuer
+ * * `recipient` - Recipient
+ */
+export type RoleEnum = 'issuer' | 'recipient';
 
 export type SequencePart = {
     type: SequencePartTypeEnum;
@@ -472,6 +615,20 @@ export type UnAuthenticatedResponseType = {
     msg: string;
 };
 
+/**
+ * UnAuthorizedResponseType
+ */
+export type UnAuthorizedResponseType = {
+    /**
+     * Msg
+     */
+    msg: string;
+};
+
+export type VerifyEmail = {
+    token: string;
+};
+
 export type CanvaTemplateImportResultWritable = {
     template: CertificateTemplateWritable;
     /**
@@ -490,6 +647,7 @@ export type CertificateBatchWritable = {
     export_file?: FileObjectWritable;
     uuid?: string;
     status?: number;
+    is_manual?: boolean;
     csv_columns?: unknown;
     mapping?: unknown;
     naming_convention?: unknown;
@@ -500,6 +658,10 @@ export type CertificateBatchWritable = {
     export_status?: ExportStatusEnum;
     export_processed_rows?: number;
     export_error_message?: string;
+    /**
+     * {recipient_field: csv_column} used to find recipients.
+     */
+    match_fields?: unknown;
 };
 
 /**
@@ -534,6 +696,24 @@ export type GeneratedCertificateWritable = {
     row_data?: unknown;
     is_successful?: boolean;
     error_message?: string;
+    issue_status?: IssueStatusEnum;
+    /**
+     * Why matching left it unassigned.
+     */
+    match_error?: string;
+    issued_at?: string | null;
+    revoked_at?: string | null;
+};
+
+export type GoogleAuthWritable = {
+    id_token: string;
+    /**
+     * Required the first time, when the account is created.
+     *
+     * * `issuer` - Issuer
+     * * `recipient` - Recipient
+     */
+    role?: RoleEnum;
 };
 
 export type LoginWritable = {
@@ -544,6 +724,15 @@ export type LoginWritable = {
     username: string;
     name: string;
     email?: string | null;
+    role?: RoleEnum;
+    email_verified?: boolean;
+    roll_number?: string;
+    /**
+     * Digits only, last 10.
+     */
+    phone?: string;
+    date_of_birth?: string | null;
+    institution?: string;
 };
 
 export type PaginatedCertificateBatchWritable = {
@@ -567,6 +756,13 @@ export type PaginatedGeneratedCertificateWritable = {
     results: Array<GeneratedCertificateWritable>;
 };
 
+export type PaginatedReceivedCertificateWritable = {
+    count: number;
+    next: string | null;
+    previous: string | null;
+    results: Array<ReceivedCertificateWritable>;
+};
+
 export type PaginatedTemplateBoxWritable = {
     count: number;
     next: string | null;
@@ -581,11 +777,31 @@ export type PaginatedTemplateImageBoxWritable = {
     results: Array<TemplateImageBoxWritable>;
 };
 
+export type ProfileWritable = {
+    name: string;
+    roll_number?: string;
+    phone?: string;
+    date_of_birth?: string | null;
+    institution?: string;
+};
+
+/**
+ * A recipient's view of a certificate issued to them.
+ */
+export type ReceivedCertificateWritable = {
+    uuid?: string;
+    file?: FileObjectWritable;
+    issue_status?: IssueStatusEnum;
+    issued_at?: string | null;
+    revoked_at?: string | null;
+};
+
 export type RegisterWritable = {
     username: string;
     name: string;
     email: string;
     password: string;
+    role: RoleEnum;
 };
 
 export type TemplateBoxWritable = {
@@ -626,6 +842,10 @@ export type PostCanvaCallbackErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -659,6 +879,10 @@ export type GetCanvaConnectErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -691,6 +915,10 @@ export type DeleteCanvaConnectionErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -734,6 +962,10 @@ export type GetCanvaDesignsErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -766,6 +998,10 @@ export type GetCanvaStatusErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -802,6 +1038,10 @@ export type DeleteCertificateBatchesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -837,6 +1077,10 @@ export type RetrieveCertificateBatchErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -862,7 +1106,20 @@ export type ListGeneratedCertificatesData = {
     path: {
         uuid: string;
     };
-    query?: never;
+    query?: {
+        /**
+         * Only one review bucket.
+         */
+        filter?: 'failed' | 'issued' | 'ready' | 'revoked' | 'unassigned';
+        /**
+         * 1-indexed page number.
+         */
+        page?: number;
+        /**
+         * Certificates per page.
+         */
+        page_size?: number;
+    };
     url: '/certificate-batches/{uuid}/certificates/';
 };
 
@@ -871,6 +1128,10 @@ export type ListGeneratedCertificatesErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -907,6 +1168,10 @@ export type PostCertificateBatchesExportErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -941,6 +1206,10 @@ export type RetrieveCertificateBatchExportProgressErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -977,6 +1246,10 @@ export type PostCertificateBatchesGenerateErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -997,6 +1270,84 @@ export type PostCertificateBatchesGenerateResponses = {
 
 export type PostCertificateBatchesGenerateResponse = PostCertificateBatchesGenerateResponses[keyof PostCertificateBatchesGenerateResponses];
 
+export type RetrieveCertificateBatchIssuanceData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificate-batches/{uuid}/issuance/';
+};
+
+export type RetrieveCertificateBatchIssuanceErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type RetrieveCertificateBatchIssuanceError = RetrieveCertificateBatchIssuanceErrors[keyof RetrieveCertificateBatchIssuanceErrors];
+
+export type RetrieveCertificateBatchIssuanceResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: IssuanceCounts;
+};
+
+export type RetrieveCertificateBatchIssuanceResponse = RetrieveCertificateBatchIssuanceResponses[keyof RetrieveCertificateBatchIssuanceResponses];
+
+export type PostCertificateBatchesIssueData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificate-batches/{uuid}/issue/';
+};
+
+export type PostCertificateBatchesIssueErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCertificateBatchesIssueError = PostCertificateBatchesIssueErrors[keyof PostCertificateBatchesIssueErrors];
+
+export type PostCertificateBatchesIssueResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: IssuanceCounts;
+};
+
+export type PostCertificateBatchesIssueResponse = PostCertificateBatchesIssueResponses[keyof PostCertificateBatchesIssueResponses];
+
 export type PutCertificateBatchesMappingData = {
     body: CertificateBatchMapping;
     path: {
@@ -1011,6 +1362,10 @@ export type PutCertificateBatchesMappingErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1032,6 +1387,45 @@ export type PutCertificateBatchesMappingResponses = {
 
 export type PutCertificateBatchesMappingResponse = PutCertificateBatchesMappingResponses[keyof PutCertificateBatchesMappingResponses];
 
+export type PostCertificateBatchesMatchData = {
+    body: CertificateMatch;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificate-batches/{uuid}/match/';
+};
+
+export type PostCertificateBatchesMatchErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCertificateBatchesMatchError = PostCertificateBatchesMatchErrors[keyof PostCertificateBatchesMatchErrors];
+
+export type PostCertificateBatchesMatchResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: IssuanceCounts;
+};
+
+export type PostCertificateBatchesMatchResponse = PostCertificateBatchesMatchResponses[keyof PostCertificateBatchesMatchResponses];
+
 export type PutCertificateBatchesNamingData = {
     body: CertificateBatchNaming;
     path: {
@@ -1046,6 +1440,10 @@ export type PutCertificateBatchesNamingErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1082,6 +1480,10 @@ export type RetrieveCertificateBatchProgressErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1101,6 +1503,45 @@ export type RetrieveCertificateBatchProgressResponses = {
 };
 
 export type RetrieveCertificateBatchProgressResponse = RetrieveCertificateBatchProgressResponses[keyof RetrieveCertificateBatchProgressResponses];
+
+export type PostCertificateBatchesRevokeData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificate-batches/{uuid}/revoke/';
+};
+
+export type PostCertificateBatchesRevokeErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCertificateBatchesRevokeError = PostCertificateBatchesRevokeErrors[keyof PostCertificateBatchesRevokeErrors];
+
+export type PostCertificateBatchesRevokeResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: IssuanceCounts;
+};
+
+export type PostCertificateBatchesRevokeResponse = PostCertificateBatchesRevokeResponses[keyof PostCertificateBatchesRevokeResponses];
 
 export type ListCertificateTemplatesData = {
     body?: never;
@@ -1127,6 +1568,10 @@ export type ListCertificateTemplatesErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1160,6 +1605,10 @@ export type PostCertificateTemplateErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1196,6 +1645,10 @@ export type ListCertificateBatchesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1230,6 +1683,10 @@ export type PostCertificateTemplateBatchesErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1266,6 +1723,10 @@ export type ListTemplateBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1300,6 +1761,10 @@ export type PostCertificateTemplateBoxesErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1337,6 +1802,10 @@ export type DeleteCertificateTemplateBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1372,6 +1841,10 @@ export type RetrieveTemplateBoxErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1409,6 +1882,10 @@ export type PutCertificateTemplateBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1444,6 +1921,10 @@ export type ListTemplateImageBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1478,6 +1959,10 @@ export type PostCertificateTemplateImageBoxesErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1515,6 +2000,10 @@ export type DeleteCertificateTemplateImageBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1550,6 +2039,10 @@ export type RetrieveTemplateImageBoxErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1587,6 +2080,10 @@ export type PutCertificateTemplateImageBoxesErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1621,6 +2118,10 @@ export type DeleteCertificateTemplateErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1657,6 +2158,10 @@ export type RetrieveCertificateTemplateErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1691,6 +2196,10 @@ export type PutCertificateTemplateErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1727,6 +2236,10 @@ export type PostCertificateTemplateCanvaSyncErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1747,6 +2260,45 @@ export type PostCertificateTemplateCanvaSyncResponses = {
 
 export type PostCertificateTemplateCanvaSyncResponse = PostCertificateTemplateCanvaSyncResponses[keyof PostCertificateTemplateCanvaSyncResponses];
 
+export type PostCertificateTemplateIssueOneData = {
+    body: IssueOne;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificate-template/{uuid}/issue-one/';
+};
+
+export type PostCertificateTemplateIssueOneErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCertificateTemplateIssueOneError = PostCertificateTemplateIssueOneErrors[keyof PostCertificateTemplateIssueOneErrors];
+
+export type PostCertificateTemplateIssueOneResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: GeneratedCertificate;
+};
+
+export type PostCertificateTemplateIssueOneResponse = PostCertificateTemplateIssueOneResponses[keyof PostCertificateTemplateIssueOneResponses];
+
 export type PostCertificateTemplateImportCanvaData = {
     body: CanvaTemplateImport;
     path?: never;
@@ -1759,6 +2311,10 @@ export type PostCertificateTemplateImportCanvaErrors = {
      * Raised when the user is not authenticated
      */
     401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
     /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
@@ -1780,8 +2336,210 @@ export type PostCertificateTemplateImportCanvaResponses = {
 
 export type PostCertificateTemplateImportCanvaResponse = PostCertificateTemplateImportCanvaResponses[keyof PostCertificateTemplateImportCanvaResponses];
 
+export type ListReceivedCertificatesData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * 1-indexed page number.
+         */
+        page?: number;
+        /**
+         * Certificates per page.
+         */
+        page_size?: number;
+    };
+    url: '/certificates/';
+};
+
+export type ListReceivedCertificatesErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type ListReceivedCertificatesError = ListReceivedCertificatesErrors[keyof ListReceivedCertificatesErrors];
+
+export type ListReceivedCertificatesResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: PaginatedReceivedCertificate;
+};
+
+export type ListReceivedCertificatesResponse = ListReceivedCertificatesResponses[keyof ListReceivedCertificatesResponses];
+
+export type DeleteCertificatesData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificates/{uuid}/';
+};
+
+export type DeleteCertificatesErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type DeleteCertificatesError = DeleteCertificatesErrors[keyof DeleteCertificatesErrors];
+
+export type DeleteCertificatesResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: DefaultSuccessResponseType;
+};
+
+export type DeleteCertificatesResponse = DeleteCertificatesResponses[keyof DeleteCertificatesResponses];
+
+export type RetrieveGeneratedCertificateData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificates/{uuid}/';
+};
+
+export type RetrieveGeneratedCertificateErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type RetrieveGeneratedCertificateError = RetrieveGeneratedCertificateErrors[keyof RetrieveGeneratedCertificateErrors];
+
+export type RetrieveGeneratedCertificateResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: GeneratedCertificate;
+};
+
+export type RetrieveGeneratedCertificateResponse = RetrieveGeneratedCertificateResponses[keyof RetrieveGeneratedCertificateResponses];
+
+export type PutCertificatesData = {
+    body?: CertificateUpdate;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificates/{uuid}/';
+};
+
+export type PutCertificatesErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PutCertificatesError = PutCertificatesErrors[keyof PutCertificatesErrors];
+
+export type PutCertificatesResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: GeneratedCertificate;
+};
+
+export type PutCertificatesResponse = PutCertificatesResponses[keyof PutCertificatesResponses];
+
+export type PostCertificatesRevokeData = {
+    body?: never;
+    path: {
+        uuid: string;
+    };
+    query?: never;
+    url: '/certificates/{uuid}/revoke/';
+};
+
+export type PostCertificatesRevokeErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCertificatesRevokeError = PostCertificatesRevokeErrors[keyof PostCertificatesRevokeErrors];
+
+export type PostCertificatesRevokeResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: GeneratedCertificate;
+};
+
+export type PostCertificatesRevokeResponse = PostCertificatesRevokeResponses[keyof PostCertificatesRevokeResponses];
+
 export type PostCoreGoogleData = {
-    body: GoogleAuth;
+    body: GoogleAuthWritable;
     path?: never;
     query?: never;
     url: '/core/google/';
@@ -1907,6 +2665,72 @@ export type PostCoreLoginResponses = {
 
 export type PostCoreLoginResponse = PostCoreLoginResponses[keyof PostCoreLoginResponses];
 
+export type RetrieveProfileData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/core/profile/';
+};
+
+export type RetrieveProfileErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type RetrieveProfileError = RetrieveProfileErrors[keyof RetrieveProfileErrors];
+
+export type RetrieveProfileResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: Profile;
+};
+
+export type RetrieveProfileResponse = RetrieveProfileResponses[keyof RetrieveProfileResponses];
+
+export type PutCoreProfileData = {
+    body: ProfileWritable;
+    path?: never;
+    query?: never;
+    url: '/core/profile/';
+};
+
+export type PutCoreProfileErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PutCoreProfileError = PutCoreProfileErrors[keyof PutCoreProfileErrors];
+
+export type PutCoreProfileResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: Profile;
+};
+
+export type PutCoreProfileResponse = PutCoreProfileResponses[keyof PutCoreProfileResponses];
+
 export type PostCoreRegisterData = {
     body: RegisterWritable;
     path?: never;
@@ -1949,6 +2773,10 @@ export type PostCoreUploadUrlErrors = {
      */
     401: UnAuthenticatedResponseType;
     /**
+     * Raised when the logged-in user's role (issuer/recipient) can't use this endpoint.
+     */
+    403: UnAuthorizedResponseType;
+    /**
      * Raised when there is a custom error, the message can be directly shown to the user.
      */
     409: CustomErrorResponseType;
@@ -1968,3 +2796,65 @@ export type PostCoreUploadUrlResponses = {
 };
 
 export type PostCoreUploadUrlResponse = PostCoreUploadUrlResponses[keyof PostCoreUploadUrlResponses];
+
+export type PostCoreVerifyEmailData = {
+    body: VerifyEmail;
+    path?: never;
+    query?: never;
+    url: '/core/verify-email/';
+};
+
+export type PostCoreVerifyEmailErrors = {
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCoreVerifyEmailError = PostCoreVerifyEmailErrors[keyof PostCoreVerifyEmailErrors];
+
+export type PostCoreVerifyEmailResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: DefaultSuccessResponseType;
+};
+
+export type PostCoreVerifyEmailResponse = PostCoreVerifyEmailResponses[keyof PostCoreVerifyEmailResponses];
+
+export type PostCoreVerifyEmailResendData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/core/verify-email/resend/';
+};
+
+export type PostCoreVerifyEmailResendErrors = {
+    /**
+     * Raised when the user is not authenticated
+     */
+    401: UnAuthenticatedResponseType;
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type PostCoreVerifyEmailResendError = PostCoreVerifyEmailResendErrors[keyof PostCoreVerifyEmailResendErrors];
+
+export type PostCoreVerifyEmailResendResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    201: DefaultSuccessResponseType;
+};
+
+export type PostCoreVerifyEmailResendResponse = PostCoreVerifyEmailResendResponses[keyof PostCoreVerifyEmailResendResponses];

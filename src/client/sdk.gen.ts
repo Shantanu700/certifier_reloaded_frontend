@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { DeleteCanvaConnectionData, DeleteCanvaConnectionErrors, DeleteCanvaConnectionResponses, DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateBatchesResponses, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateBoxesResponses, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCertificateTemplateImageBoxesResponses, DeleteCertificateTemplateResponses, DeleteCoreLoginData, DeleteCoreLoginErrors, DeleteCoreLoginResponses, GetCanvaConnectData, GetCanvaConnectErrors, GetCanvaConnectResponses, GetCanvaDesignsData, GetCanvaDesignsErrors, GetCanvaDesignsResponses, GetCanvaStatusData, GetCanvaStatusErrors, GetCanvaStatusResponses, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCanvaCallbackData, PostCanvaCallbackErrors, PostCanvaCallbackResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateCanvaSyncData, PostCertificateTemplateCanvaSyncErrors, PostCertificateTemplateCanvaSyncResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateImportCanvaData, PostCertificateTemplateImportCanvaErrors, PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
+import type { DeleteCanvaConnectionData, DeleteCanvaConnectionErrors, DeleteCanvaConnectionResponses, DeleteCertificateBatchesData, DeleteCertificateBatchesErrors, DeleteCertificateBatchesResponses, DeleteCertificatesData, DeleteCertificatesErrors, DeleteCertificatesResponses, DeleteCertificateTemplateBoxesData, DeleteCertificateTemplateBoxesErrors, DeleteCertificateTemplateBoxesResponses, DeleteCertificateTemplateData, DeleteCertificateTemplateErrors, DeleteCertificateTemplateImageBoxesData, DeleteCertificateTemplateImageBoxesErrors, DeleteCertificateTemplateImageBoxesResponses, DeleteCertificateTemplateResponses, DeleteCoreLoginData, DeleteCoreLoginErrors, DeleteCoreLoginResponses, GetCanvaConnectData, GetCanvaConnectErrors, GetCanvaConnectResponses, GetCanvaDesignsData, GetCanvaDesignsErrors, GetCanvaDesignsResponses, GetCanvaStatusData, GetCanvaStatusErrors, GetCanvaStatusResponses, GetCoreLoginData, GetCoreLoginErrors, GetCoreLoginResponses, ListCertificateBatchesData, ListCertificateBatchesErrors, ListCertificateBatchesResponses, ListCertificateTemplatesData, ListCertificateTemplatesErrors, ListCertificateTemplatesResponses, ListGeneratedCertificatesData, ListGeneratedCertificatesErrors, ListGeneratedCertificatesResponses, ListReceivedCertificatesData, ListReceivedCertificatesErrors, ListReceivedCertificatesResponses, ListTemplateBoxesData, ListTemplateBoxesErrors, ListTemplateBoxesResponses, ListTemplateImageBoxesData, ListTemplateImageBoxesErrors, ListTemplateImageBoxesResponses, PostCanvaCallbackData, PostCanvaCallbackErrors, PostCanvaCallbackResponses, PostCertificateBatchesExportData, PostCertificateBatchesExportErrors, PostCertificateBatchesExportResponses, PostCertificateBatchesGenerateData, PostCertificateBatchesGenerateErrors, PostCertificateBatchesGenerateResponses, PostCertificateBatchesIssueData, PostCertificateBatchesIssueErrors, PostCertificateBatchesIssueResponses, PostCertificateBatchesMatchData, PostCertificateBatchesMatchErrors, PostCertificateBatchesMatchResponses, PostCertificateBatchesRevokeData, PostCertificateBatchesRevokeErrors, PostCertificateBatchesRevokeResponses, PostCertificatesRevokeData, PostCertificatesRevokeErrors, PostCertificatesRevokeResponses, PostCertificateTemplateBatchesData, PostCertificateTemplateBatchesErrors, PostCertificateTemplateBatchesResponses, PostCertificateTemplateBoxesData, PostCertificateTemplateBoxesErrors, PostCertificateTemplateBoxesResponses, PostCertificateTemplateCanvaSyncData, PostCertificateTemplateCanvaSyncErrors, PostCertificateTemplateCanvaSyncResponses, PostCertificateTemplateData, PostCertificateTemplateErrors, PostCertificateTemplateImageBoxesData, PostCertificateTemplateImageBoxesErrors, PostCertificateTemplateImageBoxesResponses, PostCertificateTemplateImportCanvaData, PostCertificateTemplateImportCanvaErrors, PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateIssueOneData, PostCertificateTemplateIssueOneErrors, PostCertificateTemplateIssueOneResponses, PostCertificateTemplateResponses, PostCoreGoogleData, PostCoreGoogleErrors, PostCoreGoogleResponses, PostCoreLoginData, PostCoreLoginErrors, PostCoreLoginResponses, PostCoreRegisterData, PostCoreRegisterErrors, PostCoreRegisterResponses, PostCoreUploadUrlData, PostCoreUploadUrlErrors, PostCoreUploadUrlResponses, PostCoreVerifyEmailData, PostCoreVerifyEmailErrors, PostCoreVerifyEmailResendData, PostCoreVerifyEmailResendErrors, PostCoreVerifyEmailResendResponses, PostCoreVerifyEmailResponses, PutCertificateBatchesMappingData, PutCertificateBatchesMappingErrors, PutCertificateBatchesMappingResponses, PutCertificateBatchesNamingData, PutCertificateBatchesNamingErrors, PutCertificateBatchesNamingResponses, PutCertificatesData, PutCertificatesErrors, PutCertificatesResponses, PutCertificateTemplateBoxesData, PutCertificateTemplateBoxesErrors, PutCertificateTemplateBoxesResponses, PutCertificateTemplateData, PutCertificateTemplateErrors, PutCertificateTemplateImageBoxesData, PutCertificateTemplateImageBoxesErrors, PutCertificateTemplateImageBoxesResponses, PutCertificateTemplateResponses, PutCoreProfileData, PutCoreProfileErrors, PutCoreProfileResponses, RetrieveCertificateBatchData, RetrieveCertificateBatchErrors, RetrieveCertificateBatchExportProgressData, RetrieveCertificateBatchExportProgressErrors, RetrieveCertificateBatchExportProgressResponses, RetrieveCertificateBatchIssuanceData, RetrieveCertificateBatchIssuanceErrors, RetrieveCertificateBatchIssuanceResponses, RetrieveCertificateBatchProgressData, RetrieveCertificateBatchProgressErrors, RetrieveCertificateBatchProgressResponses, RetrieveCertificateBatchResponses, RetrieveCertificateTemplateData, RetrieveCertificateTemplateErrors, RetrieveCertificateTemplateResponses, RetrieveGeneratedCertificateData, RetrieveGeneratedCertificateErrors, RetrieveGeneratedCertificateResponses, RetrieveProfileData, RetrieveProfileErrors, RetrieveProfileResponses, RetrieveTemplateBoxData, RetrieveTemplateBoxErrors, RetrieveTemplateBoxResponses, RetrieveTemplateImageBoxData, RetrieveTemplateImageBoxErrors, RetrieveTemplateImageBoxResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -166,6 +166,32 @@ export const postCertificateBatchesGenerate = <ThrowOnError extends boolean = fa
 });
 
 /**
+ * How many of a batch's certificates are unassigned, ready, issued, revoked or failed
+ */
+export const retrieveCertificateBatchIssuance = <ThrowOnError extends boolean = false>(options: Options<RetrieveCertificateBatchIssuanceData, ThrowOnError>): RequestResult<RetrieveCertificateBatchIssuanceResponses, RetrieveCertificateBatchIssuanceErrors, ThrowOnError> => (options.client ?? client).get<RetrieveCertificateBatchIssuanceResponses, RetrieveCertificateBatchIssuanceErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-batches/{uuid}/issuance/',
+    ...options
+});
+
+/**
+ * Issue every draft certificate of a batch that has a recipient
+ */
+export const postCertificateBatchesIssue = <ThrowOnError extends boolean = false>(options: Options<PostCertificateBatchesIssueData, ThrowOnError>): RequestResult<PostCertificateBatchesIssueResponses, PostCertificateBatchesIssueErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateBatchesIssueResponses, PostCertificateBatchesIssueErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-batches/{uuid}/issue/',
+    ...options
+});
+
+/**
  * Set the CSV column -> template box mapping for a Certificate Batch
  */
 export const putCertificateBatchesMapping = <ThrowOnError extends boolean = false>(options: Options<PutCertificateBatchesMappingData, ThrowOnError>): RequestResult<PutCertificateBatchesMappingResponses, PutCertificateBatchesMappingErrors, ThrowOnError> => (options.client ?? client).put<PutCertificateBatchesMappingResponses, PutCertificateBatchesMappingErrors, ThrowOnError>({
@@ -175,6 +201,23 @@ export const putCertificateBatchesMapping = <ThrowOnError extends boolean = fals
             type: 'apiKey'
         }],
     url: '/certificate-batches/{uuid}/mapping/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Propose a recipient for each draft certificate by matching CSV columns to recipient profile fields
+ */
+export const postCertificateBatchesMatch = <ThrowOnError extends boolean = false>(options: Options<PostCertificateBatchesMatchData, ThrowOnError>): RequestResult<PostCertificateBatchesMatchResponses, PostCertificateBatchesMatchErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateBatchesMatchResponses, PostCertificateBatchesMatchErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-batches/{uuid}/match/',
     ...options,
     headers: {
         'Content-Type': 'application/json',
@@ -209,6 +252,19 @@ export const retrieveCertificateBatchProgress = <ThrowOnError extends boolean = 
             type: 'apiKey'
         }],
     url: '/certificate-batches/{uuid}/progress/',
+    ...options
+});
+
+/**
+ * Revoke every issued certificate of a batch
+ */
+export const postCertificateBatchesRevoke = <ThrowOnError extends boolean = false>(options: Options<PostCertificateBatchesRevokeData, ThrowOnError>): RequestResult<PostCertificateBatchesRevokeResponses, PostCertificateBatchesRevokeErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateBatchesRevokeResponses, PostCertificateBatchesRevokeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-batches/{uuid}/revoke/',
     ...options
 });
 
@@ -475,6 +531,23 @@ export const postCertificateTemplateCanvaSync = <ThrowOnError extends boolean = 
 });
 
 /**
+ * Render one certificate from typed values and issue it to a recipient (no CSV)
+ */
+export const postCertificateTemplateIssueOne = <ThrowOnError extends boolean = false>(options: Options<PostCertificateTemplateIssueOneData, ThrowOnError>): RequestResult<PostCertificateTemplateIssueOneResponses, PostCertificateTemplateIssueOneErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateTemplateIssueOneResponses, PostCertificateTemplateIssueOneErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificate-template/{uuid}/issue-one/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Import one page of a Canva design as a new Certificate Template
  */
 export const postCertificateTemplateImportCanva = <ThrowOnError extends boolean = false>(options: Options<PostCertificateTemplateImportCanvaData, ThrowOnError>): RequestResult<PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateImportCanvaErrors, ThrowOnError> => (options.client ?? client).post<PostCertificateTemplateImportCanvaResponses, PostCertificateTemplateImportCanvaErrors, ThrowOnError>({
@@ -489,6 +562,75 @@ export const postCertificateTemplateImportCanva = <ThrowOnError extends boolean 
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * A recipient's issued and revoked certificates (drafts are never shown)
+ */
+export const listReceivedCertificates = <ThrowOnError extends boolean = false>(options?: Options<ListReceivedCertificatesData, ThrowOnError>): RequestResult<ListReceivedCertificatesResponses, ListReceivedCertificatesErrors, ThrowOnError> => (options?.client ?? client).get<ListReceivedCertificatesResponses, ListReceivedCertificatesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificates/',
+    ...options
+});
+
+/**
+ * Retrieve, edit (recipient and/or box text) & delete one certificate
+ */
+export const deleteCertificates = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificatesData, ThrowOnError>): RequestResult<DeleteCertificatesResponses, DeleteCertificatesErrors, ThrowOnError> => (options.client ?? client).delete<DeleteCertificatesResponses, DeleteCertificatesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificates/{uuid}/',
+    ...options
+});
+
+/**
+ * Retrieve, edit (recipient and/or box text) & delete one certificate
+ */
+export const retrieveGeneratedCertificate = <ThrowOnError extends boolean = false>(options: Options<RetrieveGeneratedCertificateData, ThrowOnError>): RequestResult<RetrieveGeneratedCertificateResponses, RetrieveGeneratedCertificateErrors, ThrowOnError> => (options.client ?? client).get<RetrieveGeneratedCertificateResponses, RetrieveGeneratedCertificateErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificates/{uuid}/',
+    ...options
+});
+
+/**
+ * Retrieve, edit (recipient and/or box text) & delete one certificate
+ */
+export const putCertificates = <ThrowOnError extends boolean = false>(options: Options<PutCertificatesData, ThrowOnError>): RequestResult<PutCertificatesResponses, PutCertificatesErrors, ThrowOnError> => (options.client ?? client).put<PutCertificatesResponses, PutCertificatesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificates/{uuid}/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke one issued certificate
+ */
+export const postCertificatesRevoke = <ThrowOnError extends boolean = false>(options: Options<PostCertificatesRevokeData, ThrowOnError>): RequestResult<PostCertificatesRevokeResponses, PostCertificatesRevokeErrors, ThrowOnError> => (options.client ?? client).post<PostCertificatesRevokeResponses, PostCertificatesRevokeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/certificates/{uuid}/revoke/',
+    ...options
 });
 
 /**
@@ -535,6 +677,36 @@ export const getCoreLogin = <ThrowOnError extends boolean = false>(options?: Opt
 export const postCoreLogin = <ThrowOnError extends boolean = false>(options: Options<PostCoreLoginData, ThrowOnError>): RequestResult<PostCoreLoginResponses, PostCoreLoginErrors, ThrowOnError> => (options.client ?? client).post<PostCoreLoginResponses, PostCoreLoginErrors, ThrowOnError>({ url: '/core/login/', ...options });
 
 /**
+ * The logged-in user's own profile; recipients' fields are what issuers match CSV rows against.
+ */
+export const retrieveProfile = <ThrowOnError extends boolean = false>(options?: Options<RetrieveProfileData, ThrowOnError>): RequestResult<RetrieveProfileResponses, RetrieveProfileErrors, ThrowOnError> => (options?.client ?? client).get<RetrieveProfileResponses, RetrieveProfileErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/core/profile/',
+    ...options
+});
+
+/**
+ * The logged-in user's own profile; recipients' fields are what issuers match CSV rows against.
+ */
+export const putCoreProfile = <ThrowOnError extends boolean = false>(options: Options<PutCoreProfileData, ThrowOnError>): RequestResult<PutCoreProfileResponses, PutCoreProfileErrors, ThrowOnError> => (options.client ?? client).put<PutCoreProfileResponses, PutCoreProfileErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/core/profile/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * Sign Up API View
  */
 export const postCoreRegister = <ThrowOnError extends boolean = false>(options: Options<PostCoreRegisterData, ThrowOnError>): RequestResult<PostCoreRegisterResponses, PostCoreRegisterErrors, ThrowOnError> => (options.client ?? client).post<PostCoreRegisterResponses, PostCoreRegisterErrors, ThrowOnError>({
@@ -561,4 +733,29 @@ export const postCoreUploadUrl = <ThrowOnError extends boolean = false>(options:
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Confirm an email address from the emailed link (works whether or not the user is logged in).
+ */
+export const postCoreVerifyEmail = <ThrowOnError extends boolean = false>(options: Options<PostCoreVerifyEmailData, ThrowOnError>): RequestResult<PostCoreVerifyEmailResponses, PostCoreVerifyEmailErrors, ThrowOnError> => (options.client ?? client).post<PostCoreVerifyEmailResponses, PostCoreVerifyEmailErrors, ThrowOnError>({
+    url: '/core/verify-email/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Email the logged-in user a fresh verification link.
+ */
+export const postCoreVerifyEmailResend = <ThrowOnError extends boolean = false>(options?: Options<PostCoreVerifyEmailResendData, ThrowOnError>): RequestResult<PostCoreVerifyEmailResendResponses, PostCoreVerifyEmailResendErrors, ThrowOnError> => (options?.client ?? client).post<PostCoreVerifyEmailResendResponses, PostCoreVerifyEmailResendErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'sessionid',
+            type: 'apiKey'
+        }],
+    url: '/core/verify-email/resend/',
+    ...options
 });
