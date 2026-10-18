@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { batchProgress, exportProgress } from "@/app/actions";
 import { Loader } from "@/components/loader";
 import { templateFileUrl } from "@/components/template-preview";
+import { Button } from "@/components/ui/button";
 import { IN_FLIGHT } from "@/lib/api";
 import type {
   CertificateBatchExportProgress,
@@ -93,13 +94,12 @@ export function ExportProgress({
   const url = templateFileUrl(progress.export_file);
   if (status === "completed" && url) {
     return (
-      <a
-        href={url}
-        className="tap inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-      >
-        Download zip
-        <Download className="size-3.5" aria-hidden="true" />
-      </a>
+      <Button asChild size="sm" className="shrink-0">
+        <a href={url}>
+          <Download aria-hidden="true" />
+          Download zip
+        </a>
+      </Button>
     );
   }
 

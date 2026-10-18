@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, ExternalLink, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ExternalLink, SlidersHorizontal, Trash2 } from "lucide-react";
 
 import { deleteTemplate, editCertificate, syncFromCanva, updateTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
 import { CsvPanel, GeneratePanel, MappingPanel } from "@/components/batch-panels";
+import { ConfirmPopover } from "@/components/confirm-popover";
 import { ISSUE_FILTERS, IssuePanel, type IssueFilter } from "@/components/issue-panel";
 import { Modal } from "@/components/modal";
 import { StepLink } from "@/components/step-link";
@@ -347,20 +348,23 @@ export default async function TemplatePage({
         </div>
       </div>
 
-      <form action={deleteTemplate} className="border-t-2 border-border pt-6">
+      <div className="border-t-2 border-border pt-6">
         <p className="text-sm text-muted-foreground">
           Deleting <span className="font-bold text-foreground">{template.name}</span>{" "}
           removes its file, its boxes and every batch run from it.
         </p>
-        <input type="hidden" name="uuid" value={templateUuid} />
-        <SubmitButton
-          variant="destructive"
+        <ConfirmPopover
+          label="Delete template"
+          icon={<Trash2 aria-hidden="true" />}
+          triggerClassName="mt-5 h-12 w-full"
+          title={`Delete ${template.name}?`}
+          description="Its file, boxes and batches go with it. This can't be undone."
+          confirmLabel="Delete template"
           pendingLabel="Deleting…"
-          className="mt-5 h-12 w-full border-2 border-destructive/40"
-        >
-          Delete template
-        </SubmitButton>
-      </form>
+          action={deleteTemplate}
+          fields={<input type="hidden" name="uuid" value={templateUuid} />}
+        />
+      </div>
     </section>
   );
 
@@ -388,10 +392,10 @@ export default async function TemplatePage({
               href={fileUrl}
               target="_blank"
               rel="noreferrer"
-              className="tap inline-flex items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="inline-flex items-center gap-2 border-2 border-border px-3 py-2 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
-              Open original
               <ExternalLink className="size-3.5" aria-hidden="true" />
+              Open original
             </a>
           ) : null}
           <Link

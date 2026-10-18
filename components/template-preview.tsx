@@ -1,5 +1,6 @@
-import { FileText, ImageOff } from "lucide-react";
+import { ExternalLink, FileText, ImageOff } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { FileObject } from "@/src/client";
 import { client } from "@/src/client/client.gen";
@@ -74,14 +75,12 @@ export function TemplatePreview({
             <FileText className="size-3.5" aria-hidden="true" />
             PDF
           </span>
-          <a
-            href={src}
-            target="_blank"
-            rel="noreferrer"
-            className="text-sm font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline"
-          >
-            Open in a new tab
-          </a>
+          <Button asChild variant="outline" size="sm" className="border-2">
+            <a href={src} target="_blank" rel="noreferrer">
+              <ExternalLink aria-hidden="true" />
+              Open in a new tab
+            </a>
+          </Button>
         </div>
       </object>
     );

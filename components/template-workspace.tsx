@@ -12,6 +12,7 @@ import { Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
+import { ConfirmPopover } from "@/components/confirm-popover";
 import { Loader } from "@/components/loader";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
@@ -575,16 +576,16 @@ export function TemplateWorkspace({
                     <h4 className="text-xs font-bold tracking-widest uppercase">
                       {selected.key}
                     </h4>
-                    <Button
-                      type="button"
-                      size="xs"
-                      variant="ghost"
-                      onClick={() => removeBox(selected)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="size-3.5" aria-hidden="true" />
-                      Delete
-                    </Button>
+                    <ConfirmPopover
+                      label="Delete box"
+                      iconOnly
+                      icon={<Trash2 aria-hidden="true" />}
+                      align="end"
+                      title={`Delete the ${selected.key} box?`}
+                      description="It stops printing on certificates generated from now on."
+                      confirmLabel="Delete"
+                      onConfirm={() => removeBox(selected)}
+                    />
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">

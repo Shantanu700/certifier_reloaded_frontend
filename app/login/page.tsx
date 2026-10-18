@@ -267,16 +267,18 @@ export default function LoginPage() {
             </div>
           )}
 
-          <p className="text-center text-sm text-muted-foreground">
-            {isRegister ? "Already have an account?" : "New here?"}{" "}
-            <button
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-muted-foreground">
+            {isRegister ? "Already have an account?" : "New here?"}
+            <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={() => setMode(isRegister ? "login" : "register")}
-              className="cursor-pointer font-bold tracking-widest uppercase underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none"
+              className="border-2 text-foreground"
             >
               {isRegister ? "Sign in" : "Create an account"}
-            </button>
-          </p>
+            </Button>
+          </div>
         </div>
       </section>
     </div>

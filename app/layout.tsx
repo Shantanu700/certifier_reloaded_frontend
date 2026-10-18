@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { Space_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { FlashToaster } from "@/components/flash-toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { FLASH_COOKIE, parseFlash } from "@/lib/flash";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +39,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
       <body className="min-h-full flex flex-col">
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
         <FlashToaster flash={flash} />
       </body>
     </html>

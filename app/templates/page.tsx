@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, Search } from "lucide-react";
+import { ArrowUpRight, Search, X } from "lucide-react";
 
 import { uploadTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
@@ -155,12 +155,12 @@ export default async function TemplatesPage({
           Search
         </Button>
         {q ? (
-          <Link
-            href="/templates"
-            className="tap inline-flex h-11 items-center text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase underline underline-offset-4 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            Clear search
-          </Link>
+          <Button asChild variant="ghost" className="h-11 gap-2 border-2 border-border px-5">
+            <Link href="/templates">
+              <X className="size-4" aria-hidden="true" />
+              Clear search
+            </Link>
+          </Button>
         ) : null}
         {page && (page.hasPrev || page.hasNext) ? (
           <Pager
@@ -182,12 +182,15 @@ export default async function TemplatesPage({
         ) : null}
 
         {templates.length === 0 && q && !loadError ? (
-          <p className="px-6 py-10 text-sm text-muted-foreground md:px-10">
-            No templates match “{q}”.{" "}
-            <Link href="/templates" className="font-bold text-foreground underline underline-offset-4">
-              Clear search
-            </Link>
-          </p>
+          <div className="flex flex-wrap items-center gap-4 px-6 py-10 md:px-10">
+            <p className="text-sm text-muted-foreground">No templates match “{q}”.</p>
+            <Button asChild variant="outline" size="sm" className="border-2">
+              <Link href="/templates">
+                <X aria-hidden="true" />
+                Clear search
+              </Link>
+            </Button>
+          </div>
         ) : templates.length === 0 ? (
           <div className="flex h-full min-h-80 items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-lg border-2 border-dashed border-border px-8 py-14 text-center">
