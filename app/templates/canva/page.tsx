@@ -212,18 +212,22 @@ export default async function CanvaImportPage({
         {connected && (after || next) ? (
           <nav aria-label="More designs" className="flex justify-between gap-4 px-6 py-6 md:px-10">
             {after ? (
-              <Link href={q ? `/templates/canva?${new URLSearchParams({ q })}` : "/templates/canva"} className={TEXT_LINK}>
-                <ArrowLeft className="size-3.5" aria-hidden="true" />
-                First page
-              </Link>
+              <Button asChild variant="outline" size="sm" className="border-2">
+                <Link href={q ? `/templates/canva?${new URLSearchParams({ q })}` : "/templates/canva"}>
+                  <ArrowLeft aria-hidden="true" />
+                  First page
+                </Link>
+              </Button>
             ) : (
               <span />
             )}
             {next ? (
-              <Link href={`/templates/canva?${new URLSearchParams({ ...(q && { q }), after: next })}`} className={TEXT_LINK}>
-                More designs
-                <ArrowRight className="size-3.5" aria-hidden="true" />
-              </Link>
+              <Button asChild variant="outline" size="sm" className="border-2">
+                <Link href={`/templates/canva?${new URLSearchParams({ ...(q && { q }), after: next })}`}>
+                  More designs
+                  <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
             ) : null}
           </nav>
         ) : null}

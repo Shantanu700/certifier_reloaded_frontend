@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Download, Pencil, Send } from "lucide-react";
+import { Ban, Download, Pencil, Send, Trash2, UserMinus } from "lucide-react";
 
 import {
   assignCertificate,
@@ -10,9 +10,12 @@ import {
   revokeCertificate,
 } from "@/app/actions";
 import { Pager, certificateLabel } from "@/components/batch-panels";
+import { ConfirmPopover } from "@/components/confirm-popover";
 import { MatchFieldsEditor } from "@/components/match-fields-editor";
 import { SubmitButton } from "@/components/submit-button";
 import { templateFileUrl } from "@/components/template-preview";
+import { buttonVariants } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { asMapping, asStrings, type PageInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { CertificateBatch, GeneratedCertificate, IssuanceCounts } from "@/src/client";
@@ -21,8 +24,23 @@ const HEADING = "text-xs font-bold tracking-widest text-muted-foreground upperca
 const SELECT_CLASS =
   "h-11 w-full border-2 border-border bg-transparent px-3 text-sm font-bold tracking-tight outline-none focus:border-accent";
 const NUDGE = "border-2 border-dashed border-border p-4 text-sm text-muted-foreground";
-const SMALL_LINK =
-  "tap inline-flex items-center gap-1.5 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+// Row actions are bordered icon buttons, named by a tooltip (and aria-label for screen readers).
+const ACTION = cn(buttonVariants({ variant: "outline", size: "icon-sm" }), "border-2");
+
+/**
+ * Hover/focus name for an icon button. The trigger is a span this client component
+ * renders, not the button itself, so server-rendered children never pass through Slot.
+ */
+function Tip({ label, className, children }: { label: string; className?: string; children?: React.ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className={cn("inline-flex", className)}>{children}</span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
 
 export const ISSUE_FILTERS = [
   { id: "unassigned", label: "Unassigned" },
@@ -47,16 +65,6 @@ const BADGE: Record<IssueFilter, string> = {
   revoked: "border-destructive text-destructive",
   failed: "border-destructive text-destructive",
 };
-
-/** Confirm-before-acting disclosure, the same pattern as "Delete this batch". */
-function Confirm({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <details className="group">
-      <summary className={cn(SMALL_LINK, "flex w-fit cursor-pointer list-none marker:content-none")}>{label}</summary>
-      <div className="mt-2">{children}</div>
-    </details>
-  );
-}
 
 export function IssuePanel({
   templateUuid,
@@ -161,19 +169,24 @@ export function IssuePanel({
             </SubmitButton>
           </form>
           {counts?.issued ? (
-            <Confirm label={`Revoke all ${counts.issued}`}>
-              <form action={revokeBatch}>
-                <input type="hidden" name="templateUuid" value={templateUuid} />
-                <input type="hidden" name="uuid" value={batch.uuid} />
-                <input type="hidden" name="back" value={here} />
-                <p className="max-w-xs text-sm text-muted-foreground">
-                  Recipients keep seeing them, marked revoked, without a download.
-                </p>
-                <SubmitButton variant="destructive" pendingLabel="Revoking…" className="mt-2 h-10 border-2 border-destructive/40">
-                  Revoke every issued certificate
-                </SubmitButton>
-              </form>
-            </Confirm>
+            <ConfirmPopover
+              label={`Revoke all ${counts.issued}`}
+              icon={<Ban aria-hidden="true" />}
+              triggerClassName="h-12 px-5"
+              align="end"
+              title={`Revoke ${counts.issued} certificate${counts.issued === 1 ? "" : "s"}?`}
+              description="Recipients keep seeing them, marked revoked, without a download. This can't be undone."
+              confirmLabel="Revoke all"
+              pendingLabel="Revoking…"
+              action={revokeBatch}
+              fields={
+                <>
+                  <input type="hidden" name="templateUuid" value={templateUuid} />
+                  <input type="hidden" name="uuid" value={batch.uuid} />
+                  <input type="hidden" name="back" value={here} />
+                </>
+              }
+            />
           ) : null}
         </div>
 
@@ -232,47 +245,57 @@ export function IssuePanel({
                     </form>
                   ) : null}
 
-                  <div className="flex flex-wrap items-start gap-x-5 gap-y-2">
+                  <div className="flex flex-wrap items-start gap-2">
                     {url ? (
-                      <a href={url} target="_blank" rel="noreferrer" className={SMALL_LINK}>
-                        Open
-                        <Download className="size-3" aria-hidden="true" />
-                      </a>
+                      <Tip label="Open file">
+                        <a href={url} target="_blank" rel="noreferrer" aria-label="Open file" className={ACTION}>
+                          <Download aria-hidden="true" />
+                        </a>
+                      </Tip>
                     ) : null}
                     {s !== "revoked" ? (
-                      <Link href={`${here}&edit=${cert.uuid}`} scroll={false} className={SMALL_LINK}>
-                        Edit text
-                        <Pencil className="size-3" aria-hidden="true" />
-                      </Link>
+                      <Tip label="Edit text">
+                        <Link href={`${here}&edit=${cert.uuid}`} scroll={false} aria-label="Edit text" className={ACTION}>
+                          <Pencil aria-hidden="true" />
+                        </Link>
+                      </Tip>
                     ) : null}
                     {s === "ready" ? (
                       <form action={assignCertificate} className="flex">
                         {fields}
                         <input type="hidden" name="recipient" value="" />
-                        <button type="submit" className={cn(SMALL_LINK, "cursor-pointer")}>
-                          Remove recipient
-                        </button>
+                        <Tip label="Unassign">
+                          <button type="submit" aria-label="Unassign" className={cn(ACTION, "cursor-pointer")}>
+                            <UserMinus aria-hidden="true" />
+                          </button>
+                        </Tip>
                       </form>
                     ) : null}
                     {s === "unassigned" || s === "ready" || s === "failed" ? (
-                      <Confirm label="Delete">
-                        <form action={deleteCertificate}>
-                          {fields}
-                          <SubmitButton variant="destructive" size="sm" pendingLabel="Deleting…">
-                            Delete this certificate
-                          </SubmitButton>
-                        </form>
-                      </Confirm>
+                      <ConfirmPopover
+                        label="Delete"
+                        iconOnly
+                        icon={<Trash2 aria-hidden="true" />}
+                        title="Delete this certificate?"
+                        description={`${label} is removed from this batch. This can't be undone.`}
+                        confirmLabel="Delete"
+                        pendingLabel="Deleting…"
+                        action={deleteCertificate}
+                        fields={fields}
+                      />
                     ) : null}
                     {s === "issued" ? (
-                      <Confirm label="Revoke">
-                        <form action={revokeCertificate}>
-                          {fields}
-                          <SubmitButton variant="destructive" size="sm" pendingLabel="Revoking…">
-                            Revoke this certificate
-                          </SubmitButton>
-                        </form>
-                      </Confirm>
+                      <ConfirmPopover
+                        label="Revoke"
+                        iconOnly
+                        icon={<Ban aria-hidden="true" />}
+                        title="Revoke this certificate?"
+                        description={`${cert.recipient?.name || cert.recipient?.username || "The recipient"} keeps seeing it, marked revoked, without a download. This can't be undone.`}
+                        confirmLabel="Revoke"
+                        pendingLabel="Revoking…"
+                        action={revokeCertificate}
+                        fields={fields}
+                      />
                     ) : null}
                   </div>
                 </li>

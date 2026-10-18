@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { Download, Play } from "lucide-react";
+import { Download, Play, Trash2 } from "lucide-react";
 
 import { deleteBatch, exportBatch, generateBatch, issueOne, saveMapping } from "@/app/actions";
 import { BatchProgress, ExportProgress } from "@/components/batch-progress";
 import { BatchStatus } from "@/components/batch-status";
+import { ConfirmPopover } from "@/components/confirm-popover";
 import { CsvUploadForm } from "@/components/csv-upload-form";
 import { SelectField } from "@/components/select-field";
 import { SubmitButton } from "@/components/submit-button";
+import { Button } from "@/components/ui/button";
 import { NamingEditor } from "@/components/naming-editor";
 import { templateFileUrl } from "@/components/template-preview";
 import {
@@ -492,15 +494,12 @@ export function GeneratePanel({
                     ) : null}
                   </span>
                   {url ? (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="tap inline-flex shrink-0 items-center gap-2 text-[0.6875rem] font-bold tracking-widest uppercase underline underline-offset-4 hover:bg-accent hover:text-accent-foreground hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-                    >
-                      Open
-                      <Download className="size-3.5" aria-hidden="true" />
-                    </a>
+                    <Button asChild variant="outline" size="sm" className="shrink-0 border-2">
+                      <a href={url} target="_blank" rel="noreferrer">
+                        <Download aria-hidden="true" />
+                        Open
+                      </a>
+                    </Button>
                   ) : null}
                 </li>
               );
@@ -517,34 +516,22 @@ export function GeneratePanel({
         ) : null}
       </div>
 
-      <details className="group border-2 border-border">
-        <summary className="cursor-pointer list-none px-5 py-3 text-xs font-bold tracking-widest uppercase transition-colors marker:content-none hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent">
-          <span className="flex items-center justify-between gap-4">
-            Delete this batch
-            <span aria-hidden="true" className="text-muted-foreground">
-              <span className="group-open:hidden">+</span>
-              <span className="hidden group-open:inline">−</span>
-            </span>
-          </span>
-        </summary>
-        <div className="border-t-2 border-border p-5">
-          <p className="text-sm text-muted-foreground">
-            The CSV, its mapping and every certificate generated from it are
-            removed. The template itself is untouched.
-          </p>
-          <form action={deleteBatch} className="mt-5">
+      <ConfirmPopover
+        label="Delete this batch"
+        icon={<Trash2 aria-hidden="true" />}
+        triggerClassName="h-12 w-full"
+        title="Delete this batch?"
+        description="The CSV, its mapping and every certificate generated from it are removed. The template itself is untouched."
+        confirmLabel="Delete batch"
+        pendingLabel="Deleting…"
+        action={deleteBatch}
+        fields={
+          <>
             <input type="hidden" name="templateUuid" value={templateUuid} />
             <input type="hidden" name="uuid" value={batch.uuid} />
-            <SubmitButton
-              variant="destructive"
-              pendingLabel="Deleting…"
-              className="h-12 w-full border-2 border-destructive/40"
-            >
-              Delete permanently
-            </SubmitButton>
-          </form>
-        </div>
-      </details>
+          </>
+        }
+      />
     </section>
   );
 }
