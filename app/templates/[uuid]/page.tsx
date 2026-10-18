@@ -21,6 +21,7 @@ import {
   type EditorImageBox,
 } from "@/components/template-workspace";
 import { asList, asMapping, asPageNumber, asPageSize, type PageInfo } from "@/lib/api";
+import { isMappable } from "@/lib/boxes";
 import { getSessionId, sessionHeader } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import {
@@ -108,6 +109,8 @@ export default async function TemplatePage({
     batches = asList<CertificateBatch>(batchResult.data).filter((b) => b?.uuid);
   }
   if (!template) notFound();
+  // Verification boxes print the certificate's own code, so they never take a CSV column or typed text.
+  const mappableBoxes = boxes.filter((box) => isMappable(box.type));
 
   const templateUuid = template.uuid ?? uuid;
   const fileUrl = templateFileUrl(template.file);
@@ -224,13 +227,13 @@ export default async function TemplatePage({
         templateUuid={templateUuid}
         batches={ordered}
         selected={selectedBatch}
-        boxes={boxes}
+        boxes={mappableBoxes}
       />
     ) : step === "mapping" ? (
       <MappingPanel
         templateUuid={templateUuid}
         batch={selectedBatch}
-        boxes={boxes}
+        boxes={mappableBoxes}
       />
     ) : step === "generate" ? (
       <GeneratePanel
@@ -267,7 +270,7 @@ export default async function TemplatePage({
             Saving makes the certificate again with this text.
             {editing.issue_status === "issued" ? " Its recipient sees the new version straight away." : null}
           </p>
-          {boxes
+          {mappableBoxes
             .filter((box) => mapping[box.key])
             .map((box) => (
               <label key={box.uuid ?? box.key} className="block">

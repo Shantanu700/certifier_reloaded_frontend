@@ -166,8 +166,9 @@ export function MappingPanel({
     return (
       <p className={NUDGE}>
         This template has no text boxes, so there&apos;s nothing to map a column
-        onto. Go back to step 01 and add some. Image boxes don&apos;t appear here,
-        because their image is set when you place them.
+        onto. Go back to step 01 and add some. Image and verification boxes
+        don&apos;t appear here: they print the same image, or each
+        certificate&apos;s own code.
       </p>
     );
   }
@@ -200,6 +201,7 @@ export function MappingPanel({
                   className="block text-sm font-bold tracking-tight break-all"
                 >
                   {box.key}
+                  {box.type === "qr" ? <span className="text-muted-foreground"> · QR code</span> : null}
                 </label>
                 <SelectField
                   id={`map-${box.key}`}

@@ -1,4 +1,4 @@
-import type { FontEnum } from "@/src/client";
+import type { BoxTypeEnum, FontEnum } from "@/src/client";
 
 export const FONTS: FontEnum[] = ["sans-regular", "sans-bold", "serif-regular"];
 export const ALIGNMENTS = ["left", "center", "right"] as const;
@@ -9,7 +9,14 @@ export const BOX_DEFAULTS = {
   font_size: 32,
   font_color: "#000000",
   alignment: "center" as Alignment,
+  type: "text" as BoxTypeEnum,
 };
+
+export const BOX_TYPES: BoxTypeEnum[] = ["text", "qr", "verify_qr", "verify_code"];
+/** QR boxes draw a code in `font_color`; font, size and alignment don't apply. */
+export const isQr = (type?: BoxTypeEnum) => type === "qr" || type === "verify_qr";
+/** Boxes filled from a CSV column (or typed values). verify_* ones print the certificate's own code. */
+export const isMappable = (type?: BoxTypeEnum) => !type || type === "text" || type === "qr";
 
 export type BoxDraft = {
   uuid?: string;
@@ -22,6 +29,7 @@ export type BoxDraft = {
   font_size: number;
   font_color: string;
   alignment: Alignment;
+  type: BoxTypeEnum;
 };
 
 export type Rect = { x: number; y: number; width: number; height: number };

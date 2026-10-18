@@ -11,6 +11,14 @@ export type ClientOptions = {
  */
 export type AlignmentEnum = 'left' | 'center' | 'right';
 
+/**
+ * * `text` - Text
+ * * `qr` - QR code
+ * * `verify_qr` - Verification QR code
+ * * `verify_code` - Verification code
+ */
+export type BoxTypeEnum = 'text' | 'qr' | 'verify_qr' | 'verify_code';
+
 export type CsvKeyPart = {
     type: CsvKeyPartTypeEnum;
     /**
@@ -289,6 +297,7 @@ export type GeneratedCertificate = {
     match_error?: string;
     issued_at?: string | null;
     revoked_at?: string | null;
+    verification_code?: string | null;
 };
 
 /**
@@ -541,6 +550,7 @@ export type TemplateBox = {
     font_size?: number;
     font_color?: string;
     alignment?: AlignmentEnum;
+    type?: BoxTypeEnum;
 };
 
 export type TemplateBoxCreate = {
@@ -553,6 +563,7 @@ export type TemplateBoxCreate = {
     font_size?: number;
     font_color?: string;
     alignment?: AlignmentEnum;
+    type?: BoxTypeEnum;
 };
 
 export type TemplateBoxUpdate = {
@@ -565,6 +576,7 @@ export type TemplateBoxUpdate = {
     font_size?: number;
     font_color?: string;
     alignment?: AlignmentEnum;
+    type?: BoxTypeEnum;
 };
 
 export type TemplateImageBox = {
@@ -623,6 +635,19 @@ export type UnAuthorizedResponseType = {
      * Msg
      */
     msg: string;
+};
+
+/**
+ * What anyone holding the code sees -- no CSV row, file or contact details.
+ */
+export type VerifiedCertificate = {
+    readonly code: string;
+    issue_status?: IssueStatusEnum;
+    issued_at?: string | null;
+    revoked_at?: string | null;
+    readonly template_name: string;
+    readonly issuer_name: string;
+    readonly recipient_name: string;
 };
 
 export type VerifyEmail = {
@@ -703,6 +728,7 @@ export type GeneratedCertificateWritable = {
     match_error?: string;
     issued_at?: string | null;
     revoked_at?: string | null;
+    verification_code?: string | null;
 };
 
 export type GoogleAuthWritable = {
@@ -816,6 +842,7 @@ export type TemplateBoxWritable = {
     font_size?: number;
     font_color?: string;
     alignment?: AlignmentEnum;
+    type?: BoxTypeEnum;
 };
 
 export type TemplateImageBoxWritable = {
@@ -827,6 +854,15 @@ export type TemplateImageBoxWritable = {
     y: number;
     width: number;
     height: number;
+};
+
+/**
+ * What anyone holding the code sees -- no CSV row, file or contact details.
+ */
+export type VerifiedCertificateWritable = {
+    issue_status?: IssueStatusEnum;
+    issued_at?: string | null;
+    revoked_at?: string | null;
 };
 
 export type PostCanvaCallbackData = {
@@ -2537,6 +2573,37 @@ export type PostCertificatesRevokeResponses = {
 };
 
 export type PostCertificatesRevokeResponse = PostCertificatesRevokeResponses[keyof PostCertificatesRevokeResponses];
+
+export type VerifyCertificateData = {
+    body?: never;
+    path: {
+        code: string;
+    };
+    query?: never;
+    url: '/certificates/verify/{code}/';
+};
+
+export type VerifyCertificateErrors = {
+    /**
+     * Raised when there is a custom error, the message can be directly shown to the user.
+     */
+    409: CustomErrorResponseType;
+    /**
+     * Raised when there is a serializer error during the validation of schemas
+     */
+    418: SerializerErrorResponseType;
+};
+
+export type VerifyCertificateError = VerifyCertificateErrors[keyof VerifyCertificateErrors];
+
+export type VerifyCertificateResponses = {
+    /**
+     * Indicates that operation was successful.
+     */
+    200: VerifiedCertificate;
+};
+
+export type VerifyCertificateResponse = VerifyCertificateResponses[keyof VerifyCertificateResponses];
 
 export type PostCoreGoogleData = {
     body: GoogleAuthWritable;

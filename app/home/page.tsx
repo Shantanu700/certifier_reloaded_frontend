@@ -26,7 +26,7 @@ const STEPS = [
   },
 ];
 
-const NOT_BUILT = ["Emailing certificates to recipients", "Public verification"];
+const NOT_BUILT = ["Emailing certificates to recipients"];
 
 // The page is locked to one viewport: type and spacing scale with height as well as
 // width, and secondary copy drops out on short screens rather than forcing a scroll.
