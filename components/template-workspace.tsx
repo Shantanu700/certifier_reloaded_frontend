@@ -9,14 +9,14 @@ import {
   type CSSProperties,
 } from "react";
 import { useRouter } from "next/navigation";
-import { Image as ImageIcon, Plus, QrCode, ShieldCheck, Trash2 } from "lucide-react";
+import { Image as ImageIcon, QrCode, ScanQrCode, ShieldCheck, Trash2, Type, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { deleteBox, deleteImageBox, saveBox, saveImageBox } from "@/app/actions";
-import { ConfirmPopover } from "@/components/confirm-popover";
 import { Loader } from "@/components/loader";
 import { SelectField } from "@/components/select-field";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   ALIGNMENTS,
   BOX_DEFAULTS,
@@ -115,6 +115,22 @@ const TYPE_TAG: Partial<Record<BoxTypeEnum, string>> = {
 const TAG =
   "shrink-0 border-2 border-current px-1 font-mono text-[0.5625rem] leading-4 tracking-widest opacity-70";
 const NOTE = "col-span-2 text-xs text-muted-foreground";
+const QR_ICON = "pointer-events-none h-full w-full p-[6%]";
+const ADD_TILE =
+  "flex min-h-20 cursor-pointer flex-col items-center justify-center gap-2 border-2 border-border px-2 py-3 text-center text-[0.6875rem] leading-tight font-bold tracking-widest uppercase transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+
+// The selected box's tag on the canvas: its type, its key and a delete button.
+const TYPE_NAME: Record<BoxTypeEnum | "image", string> = {
+  text: "Text",
+  qr: "QR",
+  verify_qr: "Verify QR",
+  verify_code: "Verify code",
+  image: "Image",
+};
+const BOX_TAG =
+  "flex h-6 shrink-0 items-center px-2 text-[0.625rem] leading-none font-bold tracking-widest whitespace-nowrap uppercase";
+// Room the tag needs under a box, in screen pixels; a box closer to the bottom gets it on top.
+const TAG_ROOM = 32;
 
 function toEditorBox(box: TemplateBox, id: number): EditorBox {
   return {
@@ -574,12 +590,11 @@ export function TemplateWorkspace({
                             aria-hidden="true"
                           />
                         )
+                      ) : box.type === "verify_qr" ? (
+                        // The scan icon tells a Verify QR apart from a QR filled from the CSV.
+                        <ScanQrCode className={QR_ICON} style={{ color: box.font_color }} aria-hidden="true" />
                       ) : isQr(box.type) ? (
-                        <QrCode
-                          className="pointer-events-none h-full w-full p-[6%]"
-                          style={{ color: box.font_color }}
-                          aria-hidden="true"
-                        />
+                        <QrCode className={QR_ICON} style={{ color: box.font_color }} aria-hidden="true" />
                       ) : (
                         <span
                           className="w-full truncate px-1"
@@ -614,6 +629,42 @@ export function TemplateWorkspace({
                     </button>
                   );
                 })
+              : null}
+
+            {/* Hidden mid-drag, when the size chip takes over. Fixed colours: the artwork ignores the app theme. */}
+            {natural && scale && editing && selected && !dragging
+              ? (() => {
+                  // Centred just under the box, past its bottom handle; on top when the artwork ends first.
+                  const above = (natural.height - selected.y - selected.height) * scale < TAG_ROOM;
+                  return (
+                    <div
+                      className={cn("absolute z-10 flex -translate-x-1/2", above ? "-mt-1 -translate-y-full" : "mt-1")}
+                      style={{
+                        left: `${((selected.x + selected.width / 2) / natural.width) * 100}%`,
+                        top: `${((above ? selected.y : selected.y + selected.height) / natural.height) * 100}%`,
+                      }}
+                    >
+                      <span className={cn(BOX_TAG, "pointer-events-none bg-accent text-accent-foreground")}>
+                        {TYPE_NAME[selected.kind === "image" ? "image" : selected.type]}
+                      </span>
+                      <span className={cn(BOX_TAG, "pointer-events-none max-w-48 bg-neutral-900 text-white")}>
+                        <span className="truncate">{selected.key}</span>
+                      </span>
+                      <button
+                        type="button"
+                        aria-label="Delete box"
+                        title="Delete box"
+                        onClick={() => removeBox(selected)}
+                        className={cn(
+                          BOX_TAG,
+                          "cursor-pointer border-l border-white/25 bg-neutral-900 px-1.5 text-white/70 transition-colors hover:border-accent hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground focus-visible:outline-none"
+                        )}
+                      >
+                        <X className="size-3.5" strokeWidth={3} aria-hidden="true" />
+                      </button>
+                    </div>
+                  );
+                })()
               : null}
 
             {/* Only the guide the box is snapping to is drawn, labelled beside the box with its division. */}
@@ -684,9 +735,9 @@ export function TemplateWorkspace({
         <div className="relative min-h-0 flex-1 space-y-8 p-6 md:p-8 lg:overflow-y-auto">
           {editing ? (
             <section className="space-y-5">
-              <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="space-y-3">
                 <h3 className="flex items-center gap-2 text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                  Boxes
+                  Add a box
                   {pending ? (
                     <>
                       <Loader size="12px" />
@@ -694,45 +745,38 @@ export function TemplateWorkspace({
                     </>
                   ) : null}
                 </h3>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => addBox()}>
-                    <Plus className="size-4" aria-hidden="true" />
-                    Add box
-                  </Button>
-                  <Button asChild size="sm">
-                    <label className="cursor-pointer">
-                      <ImageIcon className="size-4" aria-hidden="true" />
-                      Add image
-                      <input
-                        type="file"
-                        accept={IMAGE_TYPES}
-                        className="sr-only"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          e.target.value = "";
-                          if (file) addImageBox(file);
-                        }}
-                      />
-                    </label>
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className={LABEL}>QR and verification (optional)</p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("qr")}>
-                    <QrCode className="size-4" aria-hidden="true" />
+                {/* One tile per box type, all alike: each just drops a new box on the artwork. */}
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+                  <button type="button" onClick={() => addBox()} className={ADD_TILE}>
+                    <Type className="size-5" aria-hidden="true" />
+                    Text
+                  </button>
+                  <label className={cn(ADD_TILE, "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-accent")}>
+                    <ImageIcon className="size-5" aria-hidden="true" />
+                    Image
+                    <input
+                      type="file"
+                      accept={IMAGE_TYPES}
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        e.target.value = "";
+                        if (file) addImageBox(file);
+                      }}
+                    />
+                  </label>
+                  <button type="button" onClick={() => addBox("qr")} className={ADD_TILE}>
+                    <QrCode className="size-5" aria-hidden="true" />
                     QR from CSV
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("verify_qr")}>
-                    <ShieldCheck className="size-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => addBox("verify_qr")} className={ADD_TILE}>
+                    <ScanQrCode className="size-5" aria-hidden="true" />
                     Verify QR
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" onClick={() => addBox("verify_code")}>
-                    <ShieldCheck className="size-4" aria-hidden="true" />
+                  </button>
+                  <button type="button" onClick={() => addBox("verify_code")} className={ADD_TILE}>
+                    <ShieldCheck className="size-5" aria-hidden="true" />
                     Verify code
-                  </Button>
+                  </button>
                 </div>
               </div>
 
@@ -773,16 +817,21 @@ export function TemplateWorkspace({
                     <h4 className="text-xs font-bold tracking-widest uppercase">
                       {selected.key}
                     </h4>
-                    <ConfirmPopover
-                      label="Delete box"
-                      iconOnly
-                      icon={<Trash2 aria-hidden="true" />}
-                      align="end"
-                      title={`Delete the ${selected.key} box?`}
-                      description="It stops printing on certificates generated from now on."
-                      confirmLabel="Delete"
-                      onConfirm={() => removeBox(selected)}
-                    />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon-sm"
+                          aria-label="Delete box"
+                          onClick={() => removeBox(selected)}
+                          className="border-2 border-destructive/40"
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete box</TooltipContent>
+                    </Tooltip>
                   </div>
 
                   <div className="mt-4 grid grid-cols-2 gap-3">
