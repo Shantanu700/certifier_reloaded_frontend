@@ -4,7 +4,8 @@ import { ArrowRight } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
 import { Button } from "@/components/ui/button";
-import { requireUser } from "@/lib/session";
+import { requireSession, sessionHeader } from "@/lib/session";
+import { getCoreLogin } from "@/src/client";
 
 // The same order as the wizard on /templates/[uuid], so the numbers mean something.
 const STEPS = [
@@ -37,7 +38,10 @@ const SHORT_ROW =
   "[@media(max-height:500px)]:flex-row [@media(max-height:500px)]:items-center [@media(max-height:500px)]:justify-between [@media(max-height:500px)]:gap-6";
 
 export default async function HomePage() {
-  const { user } = await requireUser();
+  const { sessionId } = await requireSession();
+  // Who-am-I is this page's only call: it is the data shown (name, role), not a check before others.
+  const user = (await getCoreLogin({ headers: sessionHeader(sessionId) }).catch(() => null))?.data;
+  if (!user) redirect("/login");
   if (user.role === "recipient") redirect("/certificates");
 
   return (

@@ -14,7 +14,7 @@ import {
 } from "@/lib/boxes";
 import { asNamingParts } from "@/lib/api";
 import { flashCookie, type FlashType } from "@/lib/flash";
-import { SESSION_COOKIE, requireUser, sessionHeader } from "@/lib/session";
+import { SESSION_COOKIE, requireSession, sessionHeader } from "@/lib/session";
 import {
   deleteCanvaConnection,
   deleteCertificateBatches,
@@ -217,7 +217,7 @@ export type TemplateState = { error: string } | { saved: true } | null;
 export async function presignUpload(
   body: PresignUploadRequest
 ): Promise<PresignUploadResponse | { error: string }> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let result;
   try {
@@ -238,7 +238,7 @@ export async function uploadTemplate(
   _prev: TemplateState,
   formData: FormData
 ): Promise<TemplateState> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const name = String(formData.get("name") ?? "").trim();
   const upload = String(formData.get("upload") ?? "");
 
@@ -269,7 +269,7 @@ export async function updateTemplate(
   _prev: TemplateState,
   formData: FormData
 ): Promise<TemplateState> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const uuid = String(formData.get("uuid") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const upload = String(formData.get("upload") ?? "");
@@ -300,7 +300,7 @@ export async function updateTemplate(
 }
 
 export async function deleteTemplate(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const uuid = String(formData.get("uuid") ?? "");
   if (!uuid) redirect("/templates");
 
@@ -329,7 +329,7 @@ const CANVA_PAGE = "/templates/canva";
 
 /** Sends the browser to Canva's consent screen; Canva comes back to /canva/callback. */
 export async function connectCanva() {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let url: string | undefined;
   let message = "Couldn't start the Canva sign-in.";
@@ -346,7 +346,7 @@ export async function connectCanva() {
 }
 
 export async function disconnectCanva() {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let error: unknown;
   try {
@@ -361,7 +361,7 @@ export async function disconnectCanva() {
 }
 
 export async function importCanvaDesign(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const design_id = String(formData.get("design_id") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const page = Math.max(1, Math.trunc(Number(formData.get("page"))) || 1);
@@ -408,7 +408,7 @@ export async function importCanvaDesign(formData: FormData) {
 }
 
 export async function syncFromCanva(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const uuid = String(formData.get("uuid") ?? "");
   if (!uuid) redirect("/templates");
 
@@ -468,7 +468,7 @@ export async function saveBox(
   templateUuid: string,
   draft: BoxDraft
 ): Promise<BoxState> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   const problem = invalidBox(draft);
   if (problem) return { error: problem };
@@ -505,7 +505,7 @@ export async function deleteBox(
   templateUuid: string,
   uuid: string
 ): Promise<{ error: string } | null> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let result;
   try {
@@ -535,7 +535,7 @@ export async function saveImageBox(
   draft: ImageBoxDraft,
   upload?: string
 ): Promise<ImageBoxState> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   const problem = invalidRect(draft);
   if (problem) return { error: problem };
@@ -573,7 +573,7 @@ export async function deleteImageBox(
   templateUuid: string,
   uuid: string
 ): Promise<{ error: string } | null> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let result;
   try {
@@ -610,7 +610,7 @@ async function fail(url: string, message: string): Promise<never> {
 }
 
 export async function uploadBatch(templateUuid: string, upload: string) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   if (!templateUuid) redirect("/templates");
   const here = stepUrl(templateUuid, "csv");
 
@@ -638,7 +638,7 @@ export async function uploadBatch(templateUuid: string, upload: string) {
 }
 
 export async function saveMapping(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const templateUuid = String(formData.get("templateUuid") ?? "");
   const uuid = String(formData.get("uuid") ?? "");
   if (!templateUuid || !uuid) redirect("/templates");
@@ -672,7 +672,7 @@ export async function saveMapping(formData: FormData) {
 }
 
 export async function saveNaming(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const templateUuid = String(formData.get("templateUuid") ?? "");
   const uuid = String(formData.get("uuid") ?? "");
   if (!templateUuid || !uuid) redirect("/templates");
@@ -708,7 +708,7 @@ export async function saveNaming(formData: FormData) {
 }
 
 export async function generateBatch(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const templateUuid = String(formData.get("templateUuid") ?? "");
   const uuid = String(formData.get("uuid") ?? "");
   if (!templateUuid || !uuid) redirect("/templates");
@@ -735,7 +735,7 @@ export async function generateBatch(formData: FormData) {
 }
 
 export async function batchProgress(uuid: string) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   try {
     const result = await retrieveCertificateBatchProgress({
       path: { uuid },
@@ -748,7 +748,7 @@ export async function batchProgress(uuid: string) {
 }
 
 export async function exportBatch(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const templateUuid = String(formData.get("templateUuid") ?? "");
   const uuid = String(formData.get("uuid") ?? "");
   if (!templateUuid || !uuid) redirect("/templates");
@@ -775,7 +775,7 @@ export async function exportBatch(formData: FormData) {
 }
 
 export async function exportProgress(uuid: string) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   try {
     const result = await retrieveCertificateBatchExportProgress({
       path: { uuid },
@@ -788,7 +788,7 @@ export async function exportProgress(uuid: string) {
 }
 
 export async function deleteBatch(formData: FormData) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const templateUuid = String(formData.get("templateUuid") ?? "");
   const uuid = String(formData.get("uuid") ?? "");
   if (!templateUuid || !uuid) redirect("/templates");
@@ -836,7 +836,7 @@ async function issuanceCall(
   call: (headers: { Cookie: string }) => Promise<{ error?: unknown }>,
   fallback: string
 ) {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   let error: unknown;
   try {
     error = (await call(sessionHeader(sessionId))).error;
@@ -993,7 +993,7 @@ export async function issueOne(formData: FormData) {
 export type ProfileState = { error: string; values: Record<string, string> } | { saved: true } | null;
 
 export async function updateProfile(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
   const field = (name: string) => String(formData.get(name) ?? "").trim();
   const values = Object.fromEntries(
     ["name", "roll_number", "phone", "date_of_birth", "institution"].map((name) => [name, field(name)])
@@ -1019,7 +1019,7 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
 }
 
 export async function resendVerification() {
-  const { sessionId } = await requireUser();
+  const { sessionId } = await requireSession();
 
   let error: unknown;
   let message = "Verification email sent.";

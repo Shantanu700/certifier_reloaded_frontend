@@ -9,7 +9,7 @@ import { TemplateForm } from "@/components/template-form";
 import { TemplatePreview } from "@/components/template-preview";
 import { Button } from "@/components/ui/button";
 import { asList, asPageNumber, type PageInfo } from "@/lib/api";
-import { requireIssuer, sessionHeader } from "@/lib/session";
+import { requireSession, sessionHeader } from "@/lib/session";
 import {
   listCertificateTemplates,
   type CertificateTemplate,
@@ -32,7 +32,9 @@ const listHref = (q: string, page: number) => {
 export default async function TemplatesPage({
   searchParams,
 }: PageProps<"/templates">) {
-  const { sessionId } = await requireIssuer();
+  // The list call below carries the session, so a dead one is its 401 and a recipient
+  // its 403, without a separate who-am-I round trip first.
+  const { sessionId } = await requireSession();
   const params = await searchParams;
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
   // Matching happens in Django (?search=); this page only forwards the text and renders what comes back.
@@ -43,11 +45,13 @@ export default async function TemplatesPage({
   let page: PageInfo | undefined;
   let loadError: string | undefined;
   let outOfRange = false;
+  let status: number | undefined;
   try {
     const result = await listCertificateTemplates({
       headers: sessionHeader(sessionId),
       query: { ...(q && { search: q }), page: pageNumber, page_size: PAGE_SIZE },
     });
+    status = result.response?.status;
     // DRF answers a page past the end with 404, e.g. after deleting the last template on it.
     outOfRange = result.response?.status === 404 && pageNumber > 1;
     if (result.error && !outOfRange) loadError = "The server couldn't return your templates.";
@@ -64,6 +68,9 @@ export default async function TemplatesPage({
   } catch {
     loadError = "Can't reach the server. Try again in a moment.";
   }
+  // Outside the try: redirect() works by throwing.
+  if (status === 401) redirect("/login");
+  if (status === 403) redirect("/certificates");
   if (outOfRange) redirect(listHref(q, 1));
 
   return (

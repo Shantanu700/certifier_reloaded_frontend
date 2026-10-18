@@ -1,8 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-import { getCoreLogin } from "@/src/client";
-
 export const SESSION_COOKIE = "sessionid";
 
 export const sessionHeader = (sessionId: string) => ({
@@ -12,23 +10,12 @@ export const sessionHeader = (sessionId: string) => ({
 export const getSessionId = async () =>
   (await cookies()).get(SESSION_COOKIE)?.value;
 
-export async function requireUser() {
+/**
+ * The session cookie only, no API round trip. For callers that hit the API anyway:
+ * that call carries the session, so a dead one comes back there as a 401.
+ */
+export async function requireSession() {
   const sessionId = await getSessionId();
-
-  let user;
-  if (sessionId) {
-    try {
-      user = (await getCoreLogin({ headers: sessionHeader(sessionId) })).data;
-    } catch {}
-  }
-  if (!user || !sessionId) redirect("/login");
-
-  return { user, sessionId };
-}
-
-/** Issuer-only pages: a recipient has nothing to do there, so send them to their certificates. */
-export async function requireIssuer() {
-  const session = await requireUser();
-  if (session.user.role === "recipient") redirect("/certificates");
-  return session;
+  if (!sessionId) redirect("/login");
+  return { sessionId };
 }
