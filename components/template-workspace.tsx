@@ -8,6 +8,7 @@ import {
   useTransition,
   type CSSProperties,
 } from "react";
+import { useRouter } from "next/navigation";
 import { Image as ImageIcon, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,17 +20,23 @@ import { Button } from "@/components/ui/button";
 import {
   ALIGNMENTS,
   BOX_DEFAULTS,
-  CORNERS,
   FONTS,
+  GUIDE_FRACTIONS,
+  HANDLES,
   moveBox,
   nextKey,
   resizeBox,
+  snapMove,
+  snapResize,
+  anchorAt,
   type Alignment,
+  type Anchor,
   type BoxDraft,
   type Bounds,
-  type Corner,
+  type Handle,
   type ImageBoxDraft,
   type Rect,
+  type SnapLines,
 } from "@/lib/boxes";
 import { uploadFile } from "@/lib/upload-client";
 import { IMAGE_TYPES } from "@/lib/uploads";
@@ -60,12 +67,37 @@ const FONT_STACK: Record<FontEnum, string> = {
 
 const OUTLINE_ALPHA = "30";
 
-const HANDLE_POSITION: Record<Corner, string> = {
-  nw: "-top-1.5 -left-1.5 pointer-coarse:-top-3 pointer-coarse:-left-3 cursor-nwse-resize",
-  ne: "-top-1.5 -right-1.5 pointer-coarse:-top-3 pointer-coarse:-right-3 cursor-nesw-resize",
-  sw: "-bottom-1.5 -left-1.5 pointer-coarse:-bottom-3 pointer-coarse:-left-3 cursor-nesw-resize",
-  se: "-bottom-1.5 -right-1.5 pointer-coarse:-bottom-3 pointer-coarse:-right-3 cursor-nwse-resize",
+// Handles sit centred on the box outline: white with a lime rim, matching the selected box.
+// Corners are squares, edge midpoints slim bars along their edge.
+const HANDLE_BASE = "absolute border-[1.5px] border-accent bg-white";
+const CORNER = "size-2.5 pointer-coarse:size-4";
+const BAR_X = "h-1.5 w-5 pointer-coarse:h-3 pointer-coarse:w-8";
+const BAR_Y = "h-5 w-1.5 pointer-coarse:h-8 pointer-coarse:w-3";
+const HANDLE_POSITION: Record<Handle, string> = {
+  nw: `${CORNER} -top-px -left-px -translate-x-1/2 -translate-y-1/2 cursor-nwse-resize`,
+  n: `${BAR_X} -top-px left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-ns-resize`,
+  ne: `${CORNER} -top-px -right-px translate-x-1/2 -translate-y-1/2 cursor-nesw-resize`,
+  e: `${BAR_Y} top-1/2 -right-px translate-x-1/2 -translate-y-1/2 cursor-ew-resize`,
+  se: `${CORNER} -bottom-px -right-px translate-x-1/2 translate-y-1/2 cursor-nwse-resize`,
+  s: `${BAR_X} -bottom-px left-1/2 -translate-x-1/2 translate-y-1/2 cursor-ns-resize`,
+  sw: `${CORNER} -bottom-px -left-px -translate-x-1/2 translate-y-1/2 cursor-nesw-resize`,
+  w: `${BAR_Y} top-1/2 -left-px -translate-x-1/2 -translate-y-1/2 cursor-ew-resize`,
 };
+
+// Smart-guide pink: unlike the yellow accent it stays visible on cream, white and dark artwork.
+const GUIDE = "var(--color-pink-500)";
+const GUIDE_CHIP =
+  "pointer-events-none absolute bg-pink-500 px-1 py-0.5 font-mono text-[0.625rem] leading-none font-bold whitespace-nowrap text-white";
+const CHIP =
+  "pointer-events-none absolute bg-neutral-900 px-1.5 py-1 font-mono text-[0.625rem] leading-none whitespace-nowrap text-white";
+
+// Index-aligned with GUIDE_FRACTIONS; shown on the line a box snaps to.
+const GUIDE_LABELS = ["1/4", "1/3", "1/2", "2/3", "3/4"];
+const guideLabel = (line: number, size: number) =>
+  GUIDE_LABELS[GUIDE_FRACTIONS.findIndex((f) => Math.round(size * f) === line)];
+
+// Snap reach in screen pixels, so it feels the same at any zoom.
+const SNAP_PX = 8;
 
 function toEditorBox(box: TemplateBox, id: number): EditorBox {
   return {
@@ -131,6 +163,7 @@ export function TemplateWorkspace({
   boxes: initialBoxes,
   imageBoxes: initialImageBoxes,
   editing,
+  editHref,
   tabs,
   children,
 }: {
@@ -140,6 +173,8 @@ export function TemplateWorkspace({
   boxes: TemplateBox[];
   imageBoxes: EditorImageBox[];
   editing: boolean;
+  /** Where clicking the canvas on another step goes: step 01 with the same batch. */
+  editHref: string;
   tabs: React.ReactNode;
   children?: React.ReactNode;
 }) {
@@ -167,9 +202,13 @@ export function TemplateWorkspace({
     reloaded.current = true;
     location.reload();
   };
+  const router = useRouter();
+  const [guides, setGuides] = useState<SnapLines>({});
+  const [dragging, setDragging] = useState(false);
   const gesture = useRef<{
     id: number;
-    corner?: Corner;
+    handle?: Handle;
+    anchor: Anchor;
     pointerX: number;
     pointerY: number;
     rect: Rect;
@@ -237,15 +276,22 @@ export function TemplateWorkspace({
   const onPointerDown = (
     e: React.PointerEvent,
     box: EditorBox,
-    corner?: Corner
+    handle?: Handle
   ) => {
     e.preventDefault();
     e.stopPropagation();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     setSelectedId(box.id);
+    setDragging(true);
+    // Where in the box it was grabbed decides which of its lines snaps: near the top, the top edge.
+    const grab = (e.currentTarget as HTMLElement).getBoundingClientRect();
     gesture.current = {
       id: box.id,
-      corner,
+      handle,
+      anchor: {
+        x: anchorAt((e.clientX - grab.left) / grab.width),
+        y: anchorAt((e.clientY - grab.top) / grab.height),
+      },
       pointerX: e.clientX,
       pointerY: e.clientY,
       rect: { x: box.x, y: box.y, width: box.width, height: box.height },
@@ -257,17 +303,40 @@ export function TemplateWorkspace({
     if (!g || !natural || !scale) return;
     const dx = (e.clientX - g.pointerX) / scale;
     const dy = (e.clientY - g.pointerY) / scale;
-    patch(
-      g.id,
-      g.corner
-        ? resizeBox(g.rect, g.corner, dx, dy, natural)
-        : moveBox(g.rect, dx, dy, natural)
-    );
+    const raw = g.handle
+      ? resizeBox(g.rect, g.handle, dx, dy, natural)
+      : moveBox(g.rect, dx, dy, natural);
+    // Alt places freely; otherwise the nearest guide within reach takes the box.
+    const snapped = e.altKey
+      ? { rect: raw, lines: {} }
+      : g.handle
+        ? snapResize(raw, g.handle, natural, SNAP_PX / scale)
+        : snapMove(raw, natural, SNAP_PX / scale, g.anchor);
+    patch(g.id, snapped.rect);
+    setGuides(snapped.lines);
+  };
+
+  /** On steps 02-05 the canvas is a way back into the editor, landing on the box that was clicked. */
+  const openEditor = (e: React.MouseEvent) => {
+    const wrap = wrapRef.current;
+    if (wrap && scale) {
+      const bounds = wrap.getBoundingClientRect();
+      const px = (e.clientX - bounds.left) / scale;
+      const py = (e.clientY - bounds.top) / scale;
+      // Last drawn is on top.
+      const hit = [...boxes]
+        .reverse()
+        .find((b) => px >= b.x && px <= b.x + b.width && py >= b.y && py <= b.y + b.height);
+      if (hit) setSelectedId(hit.id);
+    }
+    router.push(editHref, { scroll: false });
   };
 
   const endGesture = () => {
     const g = gesture.current;
     gesture.current = null;
+    setGuides({});
+    setDragging(false);
     if (g) persist(g.id);
   };
 
@@ -282,8 +351,9 @@ export function TemplateWorkspace({
     const delta = nudge[e.key];
     if (!delta || !natural) return;
     e.preventDefault();
-    patch(box.id, moveBox(box, delta[0], delta[1], natural));
-    persist(box.id);
+    const moved = moveBox(box, delta[0], delta[1], natural);
+    patch(box.id, moved);
+    persist(box.id, undefined, moved); // `boxes` is still this render's copy
   };
 
   const defaultRect = (): Rect | null => {
@@ -440,12 +510,13 @@ export function TemplateWorkspace({
                           : {}),
                       }}
                       className={cn(
-                        "absolute flex items-center overflow-hidden border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+                        "absolute flex items-center border-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
                         editing ? "cursor-move" : "cursor-default",
+                        // The artwork stays light or dark whatever the app theme, so these colours are fixed.
                         active
-                          ? "border-accent bg-accent/20"
-                          : "border-dashed border-foreground/50 bg-foreground/5",
-                        editing && !active ? "hover:border-foreground" : null
+                          ? "border-accent bg-accent/10"
+                          : "border-dashed border-neutral-900/40 bg-neutral-900/[0.03]",
+                        editing && !active ? "hover:border-neutral-900/70" : null
                       )}
                     >
                       {box.kind === "image" ? (
@@ -478,22 +549,83 @@ export function TemplateWorkspace({
                       )}
 
                       {active
-                        ? CORNERS.map((corner) => (
+                        ? HANDLES.map((handle) => (
                             <span
-                              key={corner}
+                              key={handle}
                               aria-hidden="true"
-                              onPointerDown={(e) => onPointerDown(e, box, corner)}
-                              className={cn(
-                                "absolute size-3 border-2 border-accent bg-background pointer-coarse:size-6",
-                                HANDLE_POSITION[corner]
-                              )}
+                              onPointerDown={(e) => onPointerDown(e, box, handle)}
+                              className={cn(HANDLE_BASE, HANDLE_POSITION[handle])}
                             />
                           ))
                         : null}
+                      {active && dragging ? (
+                        <span className={cn(CHIP, "top-full left-1/2 mt-2.5 -translate-x-1/2")}>
+                          {box.x}, {box.y} · {box.width} × {box.height}
+                        </span>
+                      ) : null}
                     </button>
                   );
                 })
               : null}
+
+            {/* Only the guide the box is snapping to is drawn, labelled beside the box with its division. */}
+            {natural && selected && guides.x !== undefined ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-y-0 w-px -translate-x-1/2"
+                  style={{
+                    left: `${(guides.x / natural.width) * 100}%`,
+                    background: `repeating-linear-gradient(to bottom, ${GUIDE} 0 6px, transparent 6px 10px)`,
+                  }}
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(GUIDE_CHIP, "-mt-2 ml-3 -translate-y-full")}
+                  style={{
+                    left: `${(guides.x / natural.width) * 100}%`,
+                    top: `${(selected.y / natural.height) * 100}%`,
+                  }}
+                >
+                  {guideLabel(guides.x, natural.width)}
+                </span>
+              </>
+            ) : null}
+            {natural && selected && guides.y !== undefined ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-x-0 h-px -translate-y-1/2"
+                  style={{
+                    top: `${(guides.y / natural.height) * 100}%`,
+                    background: `repeating-linear-gradient(to right, ${GUIDE} 0 6px, transparent 6px 10px)`,
+                  }}
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(GUIDE_CHIP, "ml-3 -translate-y-1/2")}
+                  style={{
+                    top: `${(guides.y / natural.height) * 100}%`,
+                    left: `${((selected.x + selected.width) / natural.width) * 100}%`,
+                  }}
+                >
+                  {guideLabel(guides.y, natural.height)}
+                </span>
+              </>
+            ) : null}
+
+            {!editing ? (
+              <button
+                type="button"
+                aria-label="Edit boxes"
+                onClick={openEditor}
+                className="group/edit absolute inset-0 cursor-pointer focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+              >
+                <span className="pointer-events-none absolute top-3 left-1/2 -translate-x-1/2 bg-foreground px-2.5 py-1.5 text-[0.6875rem] font-bold tracking-widest whitespace-nowrap text-background uppercase opacity-0 transition-opacity group-hover/edit:opacity-100 group-focus-visible/edit:opacity-100">
+                  Click to edit boxes
+                </span>
+              </button>
+            ) : null}
           </div>
         </div>
       </div>

@@ -423,6 +423,7 @@ export default async function TemplatePage({
           boxes={boxes}
           imageBoxes={imageBoxes}
           editing={step === "boxes"}
+          editHref={href("boxes")}
           tabs={tabs}
         >
           {panel}
