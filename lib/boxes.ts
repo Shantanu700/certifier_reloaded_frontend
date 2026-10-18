@@ -41,8 +41,9 @@ export function nextKey(boxes: { key: string }[], prefix: string) {
 
 export const MIN_BOX = 8;
 
-export const CORNERS = ["nw", "ne", "sw", "se"] as const;
-export type Corner = (typeof CORNERS)[number];
+// Corners resize two edges, edge midpoints one.
+export const HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const;
+export type Handle = (typeof HANDLES)[number];
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
@@ -56,18 +57,20 @@ export function moveBox(start: Rect, dx: number, dy: number, b: Bounds): Rect {
 
 export function resizeBox(
   start: Rect,
-  corner: Corner,
+  handle: Handle,
   dx: number,
   dy: number,
   b: Bounds
 ): Rect {
-  const west = corner === "nw" || corner === "sw";
-  const north = corner === "nw" || corner === "ne";
+  const west = handle.includes("w");
+  const east = handle.includes("e");
+  const north = handle.includes("n");
+  const south = handle.includes("s");
 
   let left = Math.round(west ? start.x + dx : start.x);
-  let right = Math.round(west ? start.x + start.width : start.x + start.width + dx);
+  let right = Math.round(east ? start.x + start.width + dx : start.x + start.width);
   let top = Math.round(north ? start.y + dy : start.y);
-  let bottom = Math.round(north ? start.y + start.height : start.y + start.height + dy);
+  let bottom = Math.round(south ? start.y + start.height + dy : start.y + start.height);
 
   left = clamp(left, 0, b.width);
   right = clamp(right, 0, b.width);
@@ -84,4 +87,70 @@ export function resizeBox(
   }
 
   return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
+// Halves, thirds and quarters of the template: the 1-, 2- and 3-line divisions together.
+export const GUIDE_FRACTIONS = [1 / 4, 1 / 3, 1 / 2, 2 / 3, 3 / 4];
+
+/** Guide positions (image px) a box is snapped to, per axis; drawn while dragging. */
+export type SnapLines = { x?: number; y?: number };
+
+/** Closest (point, guide) pair along one axis within `threshold`: the shift that lines them up, and the guide. */
+function nearestGuide(points: number[], size: number, threshold: number) {
+  let best: { shift: number; line: number } | null = null;
+  for (const fraction of GUIDE_FRACTIONS) {
+    const line = Math.round(size * fraction);
+    for (const point of points) {
+      const shift = line - point;
+      if (Math.abs(shift) <= threshold && (!best || Math.abs(shift) < Math.abs(best.shift))) {
+        best = { shift, line };
+      }
+    }
+  }
+  return best;
+}
+
+/** Which line of the box snaps, per axis, as a fraction of its size: start edge, centre or end edge. */
+export type Anchor = { x: 0 | 0.5 | 1; y: 0 | 0.5 | 1 };
+
+/** The box line nearest a point inside it (0-1 across the box): grab near the top and the top edge snaps. */
+export const anchorAt = (fraction: number): 0 | 0.5 | 1 =>
+  fraction < 0.25 ? 0 : fraction > 0.75 ? 1 : 0.5;
+
+/** Moves the box so its `anchor` line, per axis, sits on the nearest guide within `threshold`. */
+export function snapMove(
+  rect: Rect,
+  b: Bounds,
+  threshold: number,
+  anchor: Anchor
+): { rect: Rect; lines: SnapLines } {
+  const x = nearestGuide([rect.x + rect.width * anchor.x], b.width, threshold);
+  const y = nearestGuide([rect.y + rect.height * anchor.y], b.height, threshold);
+  return {
+    rect: moveBox(rect, Math.round(x?.shift ?? 0), Math.round(y?.shift ?? 0), b),
+    lines: { x: x?.line, y: y?.line },
+  };
+}
+
+/** Snaps only the edges `handle` drags: one axis for an edge handle, both for a corner. */
+export function snapResize(
+  rect: Rect,
+  handle: Handle,
+  b: Bounds,
+  threshold: number
+): { rect: Rect; lines: SnapLines } {
+  const x = handle.includes("w")
+    ? nearestGuide([rect.x], b.width, threshold)
+    : handle.includes("e")
+      ? nearestGuide([rect.x + rect.width], b.width, threshold)
+      : null;
+  const y = handle.includes("n")
+    ? nearestGuide([rect.y], b.height, threshold)
+    : handle.includes("s")
+      ? nearestGuide([rect.y + rect.height], b.height, threshold)
+      : null;
+  return {
+    rect: resizeBox(rect, handle, x?.shift ?? 0, y?.shift ?? 0, b),
+    lines: { x: x?.line, y: y?.line },
+  };
 }
