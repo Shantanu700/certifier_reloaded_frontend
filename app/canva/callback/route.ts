@@ -2,26 +2,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
+import { fetchWithLength } from "@/lib/fetch-with-length";
 import { flashCookie } from "@/lib/flash";
 import { getSessionId, sessionHeader } from "@/lib/session";
 import { postCanvaCallback } from "@/src/client";
 
 const CANVA_PAGE = "/templates/canva";
-
-/**
- * Inside route handlers (not pages or server actions) Next 16.3's patched
- * fetch sends a Request object's body chunked, without Content-Length, and
- * Django reads that as an empty body. Re-issue it as url + init so the
- * length survives.
- */
-const fetchWithLength = (async (input: RequestInfo | URL) => {
-  const request = input as Request;
-  return fetch(request.url, {
-    method: request.method,
-    headers: request.headers,
-    body: await request.text(),
-  });
-}) as typeof fetch;
 
 /**
  * Canva's OAuth redirect lands here (a top-level GET, so our lax sessionid

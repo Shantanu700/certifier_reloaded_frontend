@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 
 import { AppHeader } from "@/components/app-header";
@@ -25,7 +26,7 @@ const STEPS = [
   },
 ];
 
-const NOT_BUILT = ["Email delivery", "Recipient download page", "Public verification"];
+const NOT_BUILT = ["Emailing certificates to recipients", "Public verification"];
 
 // The page is locked to one viewport: type and spacing scale with height as well as
 // width, and secondary copy drops out on short screens rather than forcing a scroll.
@@ -37,6 +38,7 @@ const SHORT_ROW =
 
 export default async function HomePage() {
   const { user } = await requireUser();
+  if (user.role === "recipient") redirect("/certificates");
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
