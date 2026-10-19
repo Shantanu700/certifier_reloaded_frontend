@@ -37,7 +37,7 @@ already surfaces as a **403** (DRF's answer for unauthenticated, not 401) and
 `requireUser()` would only add a fifth Django hit to every step navigation.
 Don't add it back there.
 
-Auth is real, against a Django backend at `https://localhost:8022`. `/core/login/`:
+Auth is real, against the Django backend at `NEXT_PUBLIC_API_URL` (default `https://localhost:8022`; `lib/api-config.ts` is the generated client's `runtimeConfigPath`). `/core/login/`:
 
 - `POST` takes `Authorization: Basic base64(username:password)` — no body — and
   answers `201` + a `sessionid` Set-Cookie. `app/actions.ts` lifts that value out
