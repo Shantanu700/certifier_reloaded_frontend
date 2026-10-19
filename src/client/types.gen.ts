@@ -91,14 +91,25 @@ export type CanvaTemplateImport = {
 export type CanvaTemplateImportResult = {
     template: CertificateTemplate;
     /**
-     * Pixel width actually imported.
+     * Pixel width actually imported; null when already_imported.
      */
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
     /**
      * Canva wouldn't export at the requested width (e.g. its Free-plan upscale limit), so the design's own size was used.
      */
     downscaled: boolean;
+    /**
+     * This design page was already a template; `template` is that one and nothing was exported.
+     */
+    already_imported: boolean;
+};
+
+export type CanvaTemplateSync = {
+    /**
+     * New export width in pixels; placed boxes are scaled to match. Omit to keep the current size.
+     */
+    width?: number;
 };
 
 /**
@@ -657,14 +668,18 @@ export type VerifyEmail = {
 export type CanvaTemplateImportResultWritable = {
     template: CertificateTemplateWritable;
     /**
-     * Pixel width actually imported.
+     * Pixel width actually imported; null when already_imported.
      */
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
     /**
      * Canva wouldn't export at the requested width (e.g. its Free-plan upscale limit), so the design's own size was used.
      */
     downscaled: boolean;
+    /**
+     * This design page was already a template; `template` is that one and nothing was exported.
+     */
+    already_imported: boolean;
 };
 
 export type CertificateBatchWritable = {
@@ -2258,7 +2273,7 @@ export type PutCertificateTemplateResponses = {
 export type PutCertificateTemplateResponse = PutCertificateTemplateResponses[keyof PutCertificateTemplateResponses];
 
 export type PostCertificateTemplateCanvaSyncData = {
-    body?: never;
+    body?: CanvaTemplateSync;
     path: {
         uuid: string;
     };

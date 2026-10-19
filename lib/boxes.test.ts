@@ -51,3 +51,26 @@ test("edge handles move one edge only", () => {
   expect(rect).toEqual(box(100, 100, 500, 100));
   expect(lines).toEqual({ x: 600, y: undefined });
 });
+
+test("a square corner drag stays square and keeps the opposite corner put", () => {
+  // Dragging se mostly right: the side follows the larger drag.
+  expect(resizeBox(box(100, 100, 100, 100), "se", 60, 10, page, true)).toEqual(box(100, 100, 160, 160));
+  // Dragging nw: the bottom-right corner (200, 200) stays.
+  expect(resizeBox(box(100, 100, 100, 100), "nw", -30, -50, page, true)).toEqual(box(50, 50, 150, 150));
+  // A rectangle from before the rule becomes square on its first drag.
+  expect(resizeBox(box(100, 100, 200, 100), "ne", 0, 0, page, true)).toEqual(box(100, 0, 200, 200));
+});
+
+test("a square box stops at the page edge on either axis", () => {
+  // 100 px of room below, 1000 to the right: the side stops at 100 + 100.
+  expect(resizeBox(box(100, 700, 100, 100), "se", 500, 500, page, true)).toEqual(box(100, 700, 200, 200));
+});
+
+test("a square snap uses the nearer guide and keeps the box square", () => {
+  // Right edge 596 and bottom 596 are both 4 from 600: x wins the tie.
+  const { rect, lines } = snapResize(box(100, 100, 496, 496), "se", page, 8, true);
+  expect(rect).toEqual(box(100, 100, 500, 500));
+  expect(lines).toEqual({ x: 600 });
+  // Dragging the west edge: left 302 snaps out to 300, so the side grows by 2.
+  expect(snapResize(box(302, 400, 100, 100), "sw", page, 8, true).rect).toEqual(box(300, 400, 102, 102));
+});

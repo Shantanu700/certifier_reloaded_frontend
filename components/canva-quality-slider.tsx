@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -22,21 +22,42 @@ const PRESETS = [
  * size outside a preview endpoint (which blocks public review), so this works
  * in pixels rather than Canva's ×1/×2 multiples; the thumbnail has the
  * design's proportions, which is all the height readout needs.
+ *
+ * With `currentUrl` (a refresh), it starts at that image's size and submits
+ * nothing until moved, so an untouched refresh keeps the template's size.
  */
 export function CanvaQualitySlider({
   id,
   thumbnailWidth,
   thumbnailHeight,
+  currentUrl,
 }: {
   id: string;
   thumbnailWidth: number | null;
   thumbnailHeight: number | null;
+  currentUrl?: string;
 }) {
   const [width, setWidth] = useState<number>(PRESETS[1].width);
-  const height =
-    thumbnailWidth && thumbnailHeight
-      ? Math.round((width * thumbnailHeight) / thumbnailWidth)
-      : null;
+  const [current, setCurrent] = useState<{ width: number; height: number } | null>(null);
+  const [touched, setTouched] = useState(!currentUrl);
+
+  useEffect(() => {
+    if (!currentUrl) return;
+    const image = new Image();
+    image.onload = () => {
+      const natural = { width: image.naturalWidth, height: image.naturalHeight };
+      setCurrent(natural);
+      setWidth(Math.min(Math.max(natural.width, MIN_WIDTH), MAX_WIDTH));
+    };
+    image.src = currentUrl;
+  }, [currentUrl]);
+
+  const choose = (value: number) => {
+    setWidth(value);
+    setTouched(true);
+  };
+  const ratio = current ?? (thumbnailWidth && thumbnailHeight ? { width: thumbnailWidth, height: thumbnailHeight } : null);
+  const height = ratio ? Math.round((width * ratio.height) / ratio.width) : null;
   const size = height ? `${width} × ${height} px` : `${width} px wide`;
 
   return (
@@ -49,7 +70,7 @@ export function CanvaQualitySlider({
       </label>
       <input
         id={id}
-        name="width"
+        name={touched ? "width" : undefined}
         type="range"
         min={MIN_WIDTH}
         max={MAX_WIDTH}
@@ -57,7 +78,7 @@ export function CanvaQualitySlider({
         value={width}
         list={`${id}-stops`}
         aria-valuetext={height ? `${width} by ${height} pixels` : `${width} pixels wide`}
-        onChange={(e) => setWidth(Number(e.currentTarget.value))}
+        onChange={(e) => choose(Number(e.currentTarget.value))}
         className="mt-2 w-full cursor-pointer accent-accent"
       />
       <datalist id={`${id}-stops`}>
@@ -78,7 +99,7 @@ export function CanvaQualitySlider({
             key={p.label}
             type="button"
             aria-pressed={width === p.width}
-            onClick={() => setWidth(p.width)}
+            onClick={() => choose(p.width)}
             className={cn(
               "flex-1 border-2 px-2 py-1.5 text-[0.6875rem] font-bold tracking-widest uppercase transition-colors pointer-coarse:py-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
               width === p.width

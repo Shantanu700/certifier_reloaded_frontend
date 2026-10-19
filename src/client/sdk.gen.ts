@@ -527,7 +527,11 @@ export const postCertificateTemplateCanvaSync = <ThrowOnError extends boolean = 
             type: 'apiKey'
         }],
     url: '/certificate-template/{uuid}/canva-sync/',
-    ...options
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**
