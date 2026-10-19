@@ -13,7 +13,7 @@ which holds all the data.
 ### Prerequisites
 
 - [Bun](https://bun.sh) (the package manager for this repo — ignore `package-lock.json`)
-- The Django backend running at `https://localhost:8022`
+- The Django backend, at `https://localhost:8022` by default (see `NEXT_PUBLIC_API_URL` below)
 - An S3 bucket configured on the backend, with CORS allowing `PUT` and `GET` from
   `http://localhost:3000` and the `Content-Type` request header (uploads go straight
   from the browser to S3)
@@ -38,9 +38,12 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
 
 ### Notes
 
-- The API address is set in `src/client/client.gen.ts` (generated from
-  `openapi-ts.config.ts`). To point at a different backend, change the `input` in
-  `openapi-ts.config.ts` and rerun `bun run openapi-ts`. Never hand-edit `src/client/`.
+- The backend address is `NEXT_PUBLIC_API_URL` (e.g. `https://api.example.com`), read by
+  `lib/api-config.ts`; unset, it is the dev backend `https://localhost:8022`. Set it in
+  `.env.local`, or in the environment when building: Next inlines `NEXT_PUBLIC_` values at
+  build time (the browser builds file links too), so a build keeps the address it was built
+  with. `bun run openapi-ts` regenerates `src/client/` from the dev schema, or from
+  `OPENAPI_INPUT` if set. Never hand-edit `src/client/`.
 - The dev backend uses a self-signed certificate, so only `dev` and `openapi-ts` set
   `NODE_TLS_REJECT_UNAUTHORIZED=0`. `build` and `start` check certificates: to run a
   production build against the dev backend, trust its certificate with
@@ -50,7 +53,7 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
 - To show the "Continue with Google" button, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `.env.local`
   to the same OAuth client id the backend has as `GOOGLE_CLIENT_ID`, and add
   `http://localhost:3000` to that client's authorised JavaScript origins. Without it the
-  button is hidden; nothing else needs environment variables.
+  button is hidden.
 - There is no test suite yet.
 
 ## How the app works
