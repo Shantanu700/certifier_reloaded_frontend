@@ -14,8 +14,8 @@ import { ConfirmPopover } from "@/components/confirm-popover";
 import { MatchFieldsEditor } from "@/components/match-fields-editor";
 import { SubmitButton } from "@/components/submit-button";
 import { templateFileUrl } from "@/components/template-preview";
+import { Tip } from "@/components/tip";
 import { buttonVariants } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { asMapping, asStrings, type PageInfo } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { CertificateBatch, GeneratedCertificate, IssuanceCounts } from "@/src/client";
@@ -26,21 +26,6 @@ const SELECT_CLASS =
 const NUDGE = "border-2 border-dashed border-border p-4 text-sm text-muted-foreground";
 // Row actions are bordered icon buttons, named by a tooltip (and aria-label for screen readers).
 const ACTION = cn(buttonVariants({ variant: "outline", size: "icon-sm" }), "border-2");
-
-/**
- * Hover/focus name for an icon button. The trigger is a span this client component
- * renders, not the button itself, so server-rendered children never pass through Slot.
- */
-function Tip({ label, className, children }: { label: string; className?: string; children?: React.ReactNode }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className={cn("inline-flex", className)}>{children}</span>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
 
 export const ISSUE_FILTERS = [
   { id: "unassigned", label: "Unassigned" },
