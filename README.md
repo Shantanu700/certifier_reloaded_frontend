@@ -8,6 +8,8 @@ Built with Next.js 16 (App Router), React 19, Tailwind CSS v4 and shadcn/ui. It 
 a separate Django REST backend ([certifier_reloaded_backend](https://github.com/Shantanu700/certifier_reloaded_backend)),
 which holds all the data.
 
+Running it in production? See the [self-hosting guide](https://github.com/Shantanu700/certifier_reloaded_backend/blob/main/docs/self-hosting.md), which covers both apps and ends with a checklist.
+
 ## Running the project
 
 ### Prerequisites
@@ -124,3 +126,13 @@ src/client/             generated API client (do not edit)
 
 See `CLAUDE.md` for detailed backend quirks and conventions, and `theme.md` for the
 design system.
+
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Commits need a DCO sign-off (`git commit -s`), and everyone taking part follows the [Code of Conduct](CODE_OF_CONDUCT.md). Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+
+## Licence
+
+Copyright (C) 2026 Shantanu Gupta.
+
+Certifier is free software: you can redistribute it and/or modify it under the terms of the [GNU Affero General Public License, version 3](LICENSE). If you run a modified version as a network service, the AGPL requires you to offer its users the source code of your version.
