@@ -25,3 +25,26 @@ jobs:
       # which a plain `tsc --noEmit` can't do on a fresh checkout.
       - name: Build
         run: bun run build
+
+  # Every commit in a pull request needs a DCO sign-off from its author (CONTRIBUTING.md).
+  dco:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Every commit is signed off by its author
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          status=0
+          for c in $(git rev-list --no-merges "$BASE..$HEAD"); do
+            author=$(git show -s --format='%ae' "$c")
+            if ! git show -s --format='%(trailers:key=Signed-off-by,valueonly)' "$c" | grep -qiF "<$author>"; then
+              echo "::error::$(git show -s --format='%h %s' "$c"): no Signed-off-by for $author. Sign off with git commit -s (see CONTRIBUTING.md)."
+              status=1
+            fi
+          done
+          exit $status
