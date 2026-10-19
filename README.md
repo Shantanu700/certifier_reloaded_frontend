@@ -41,9 +41,12 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
 - The API address is set in `src/client/client.gen.ts` (generated from
   `openapi-ts.config.ts`). To point at a different backend, change the `input` in
   `openapi-ts.config.ts` and rerun `bun run openapi-ts`. Never hand-edit `src/client/`.
-- The dev backend uses a self-signed certificate, so the scripts set
-  `NODE_TLS_REJECT_UNAUTHORIZED=0`. This is for local development only — remove it once
-  the certificate is trusted, and never deploy with it.
+- The dev backend uses a self-signed certificate, so only `dev` and `openapi-ts` set
+  `NODE_TLS_REJECT_UNAUTHORIZED=0`. `build` and `start` check certificates: to run a
+  production build against the dev backend, trust its certificate with
+  `NODE_EXTRA_CA_CERTS=/path/to/cert.pem bun run start` instead of switching checks off.
+- Sign-up and the verify page forward the visitor's `X-Forwarded-For` so the backend can
+  rate-limit per visitor. Deploy behind a host that appends the real address (Vercel, nginx).
 - To show the "Continue with Google" button, set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` in `.env.local`
   to the same OAuth client id the backend has as `GOOGLE_CLIENT_ID`, and add
   `http://localhost:3000` to that client's authorised JavaScript origins. Without it the

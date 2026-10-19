@@ -4,6 +4,7 @@ import { Ban, BadgeCheck, Search } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Wordmark } from "@/components/wordmark";
 import { Button } from "@/components/ui/button";
+import { forwardedFor } from "@/lib/session";
 import { cn } from "@/lib/utils";
 import { verifyCertificate, type VerifiedCertificate } from "@/src/client";
 
@@ -25,7 +26,7 @@ export default async function VerifyPage({ searchParams }: PageProps<"/verify">)
   let error: string | undefined;
   if (code) {
     try {
-      const result = await verifyCertificate({ path: { code } });
+      const result = await verifyCertificate({ path: { code }, headers: await forwardedFor() });
       certificate = result.data;
       if (!certificate) {
         const { msg } = (result.error ?? {}) as { msg?: unknown };

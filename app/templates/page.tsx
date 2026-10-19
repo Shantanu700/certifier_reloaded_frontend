@@ -1,12 +1,15 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, Search, Settings2, X } from "lucide-react";
+import { ArrowUpRight, Pencil, Search, X } from "lucide-react";
 
 import { uploadTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
 import { Pager } from "@/components/batch-panels";
+import { Modal } from "@/components/modal";
 import { TemplateForm } from "@/components/template-form";
 import { TemplatePreview } from "@/components/template-preview";
+import { TemplateSettings } from "@/components/template-settings";
+import { Tip } from "@/components/tip";
 import { Button } from "@/components/ui/button";
 import { asList, asPageNumber, type PageInfo } from "@/lib/api";
 import { requireSession, sessionHeader } from "@/lib/session";
@@ -24,8 +27,13 @@ const DATE_FORMAT: Intl.DateTimeFormatOptions = {
 // A multiple of the grid's 2 and 3 columns, so full pages have no ragged last row.
 const PAGE_SIZE = 6;
 
-const listHref = (q: string, page: number) => {
-  const params = new URLSearchParams({ ...(q && { q }), ...(page > 1 && { page: String(page) }) });
+// `edit` opens that template's settings in a modal over the list.
+const listHref = (q: string, page: number, edit?: string) => {
+  const params = new URLSearchParams({
+    ...(q && { q }),
+    ...(page > 1 && { page: String(page) }),
+    ...(edit && { edit }),
+  });
   return params.size ? `/templates?${params}` : "/templates";
 };
 
@@ -40,6 +48,7 @@ export default async function TemplatesPage({
   // Matching happens in Django (?search=); this page only forwards the text and renders what comes back.
   const q = one(params.q).trim().slice(0, 255);
   const pageNumber = asPageNumber(params.page);
+  const editUuid = one(params.edit);
 
   let templates: CertificateTemplate[] = [];
   let page: PageInfo | undefined;
@@ -72,6 +81,8 @@ export default async function TemplatesPage({
   if (status === 401) redirect("/login");
   if (status === 403) redirect("/certificates");
   if (outOfRange) redirect(listHref(q, 1));
+  // Edit links come from this page's cards, so the template is already in the list.
+  const editing = editUuid ? templates.find((t) => t.uuid === editUuid) : undefined;
 
   return (
     <div className="flex flex-col lg:h-dvh lg:overflow-hidden">
@@ -217,10 +228,11 @@ export default async function TemplatesPage({
           >
             {templates.map((template) => (
               // A div, not one big link: the Edit link inside can't nest in another <a>.
-              // The name's link stretches over the whole card (after:inset-0) instead.
+              // The name's link stretches over the whole card (after:inset-0) instead, and
+              // the card lights up only while that link is hovered, not the Edit button.
               <div
                 key={template.uuid ?? template.id}
-                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
+                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-150 has-[.card-open:hover]:bg-accent has-[.card-open:hover]:text-accent-foreground"
               >
                 <TemplatePreview
                   file={template.file}
@@ -233,14 +245,14 @@ export default async function TemplatesPage({
                     <h3 className="truncate text-2xl leading-none font-bold tracking-tighter uppercase">
                       <Link
                         href={`/templates/${template.uuid}`}
-                        className="outline-none after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-accent"
+                        className="card-open outline-none after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-accent"
                       >
                         {template.name}
                       </Link>
                     </h3>
                     <p
                       suppressHydrationWarning
-                      className="mt-2 text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase group-hover:text-accent-foreground/70"
+                      className="mt-2 text-[0.6875rem] font-bold tracking-widest text-muted-foreground uppercase group-has-[.card-open:hover]:text-accent-foreground/70"
                     >
                       Updated{" "}
                       {new Date(template.updated_at).toLocaleDateString(
@@ -249,25 +261,23 @@ export default async function TemplatesPage({
                       )}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-4">
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className="relative z-10 border-2 bg-background text-foreground"
-                    >
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Tip label="Edit template" className="relative z-10">
                       <Link
-                        href={`/templates/${template.uuid}?settings=1`}
+                        href={listHref(q, pageNumber, template.uuid)}
+                        scroll={false}
                         aria-label={`Edit ${template.name}`}
+                        className="flex size-9 items-center justify-center transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
                       >
-                        <Settings2 aria-hidden="true" />
-                        Edit
+                        <Pencil className="size-5" aria-hidden="true" />
                       </Link>
-                    </Button>
-                    <ArrowUpRight
-                      className="size-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
-                      aria-hidden="true"
-                    />
+                    </Tip>
+                    <span className="flex size-9 items-center justify-center">
+                      <ArrowUpRight
+                        className="size-5 transition-transform group-has-[.card-open:hover]:translate-x-1 group-has-[.card-open:hover]:-translate-y-1"
+                        aria-hidden="true"
+                      />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -275,6 +285,16 @@ export default async function TemplatesPage({
           </section>
         )}
       </div>
+
+      {editing ? (
+        <Modal closeHref={listHref(q, pageNumber)} label="Template settings">
+          <TemplateSettings
+            template={editing}
+            done={listHref(q, pageNumber)}
+            retry={listHref(q, pageNumber, editing.uuid)}
+          />
+        </Modal>
+      ) : null}
     </div>
   );
 }

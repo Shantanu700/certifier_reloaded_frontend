@@ -14,7 +14,7 @@ import {
 } from "@/lib/boxes";
 import { asNamingParts } from "@/lib/api";
 import { flashCookie, type FlashType } from "@/lib/flash";
-import { SESSION_COOKIE, requireSession, sessionHeader } from "@/lib/session";
+import { SESSION_COOKIE, forwardedFor, requireSession, sessionHeader } from "@/lib/session";
 import {
   deleteCanvaConnection,
   deleteCertificateBatches,
@@ -146,6 +146,7 @@ export async function register(
   try {
     result = await postCoreRegister({
       body: { username, name: field("name"), email: field("email"), password, role },
+      headers: await forwardedFor(),
     });
   } catch {
     return { error: "Can't reach the server. Try again in a moment.", username };
@@ -317,7 +318,7 @@ export async function deleteTemplate(formData: FormData) {
 
   if (error) {
     console.error("template delete failed", error);
-    return fail(`/templates/${uuid}`, messageFrom(error, "Delete failed. Please try again."));
+    return fail(templatePath(formData, "retry", `/templates/${uuid}`), messageFrom(error, "Delete failed. Please try again."));
   }
 
   revalidatePath("/templates");
@@ -438,13 +439,16 @@ export async function syncFromCanva(formData: FormData) {
 
   if (error) {
     console.error("canva sync failed", error);
-    return fail(`/templates/${uuid}?settings=1`, messageFrom(error, "Refresh failed. Please try again."));
+    return fail(
+      templatePath(formData, "retry", `/templates/${uuid}?settings=1`),
+      messageFrom(error, "Refresh failed. Please try again.")
+    );
   }
 
   revalidatePath("/templates");
   revalidatePath(`/templates/${uuid}`);
   await flash("success", "Refreshed from Canva.");
-  redirect(`/templates/${uuid}`);
+  redirect(templatePath(formData, "done", `/templates/${uuid}`));
 }
 
 
@@ -616,6 +620,12 @@ async function flash(type: FlashType, message: string) {
 }
 
 /** Error toast, then redirect. Call as `return fail(...)` so TypeScript narrows after it. */
+/** Where a template-settings form asked to land: a /templates path only, so a forged field can't redirect off-site. */
+function templatePath(formData: FormData, key: string, fallback: string) {
+  const value = String(formData.get(key) ?? "");
+  return /^\/templates(?:[/?]|$)/.test(value) ? value : fallback;
+}
+
 async function fail(url: string, message: string): Promise<never> {
   await flash("error", message);
   redirect(url);
