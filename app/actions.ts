@@ -394,6 +394,15 @@ export async function importCanvaDesign(formData: FormData) {
     return fail(back, messageFrom(error, "Import failed. Please try again."));
   }
 
+  // The page was imported before: open that template, settings first so Refresh is in view.
+  if (imported.already_imported) {
+    await flash(
+      "info",
+      `“${imported.template.name}” was already imported from this Canva page, so it opened instead. Use Refresh from Canva to update it.`
+    );
+    redirect(`/templates/${uuid}?settings=1`);
+  }
+
   revalidatePath("/templates");
   // Canva may refuse to upscale (Free-plan limit); say so rather than quietly delivering less.
   if (imported.downscaled) {
@@ -411,12 +420,15 @@ export async function syncFromCanva(formData: FormData) {
   const { sessionId } = await requireSession();
   const uuid = String(formData.get("uuid") ?? "");
   if (!uuid) redirect("/templates");
+  // Only sent once the slider is moved; absent keeps the template's current size.
+  const width = Math.trunc(Number(formData.get("width"))) || undefined;
 
   let error: unknown;
   try {
     error = (
       await postCertificateTemplateCanvaSync({
         path: { uuid },
+        body: width ? { width } : undefined,
         headers: sessionHeader(sessionId),
       })
     ).error;

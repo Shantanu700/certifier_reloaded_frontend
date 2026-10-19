@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowUpRight, Search, X } from "lucide-react";
+import { ArrowUpRight, Search, Settings2, X } from "lucide-react";
 
 import { uploadTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
@@ -88,8 +88,8 @@ export default async function TemplatesPage({
               </span>
             </h1>
             <p className="mt-5 max-w-sm text-sm leading-tight text-muted-foreground md:text-base">
-              The artwork a certificate is printed onto. Open one to rename it or
-              replace the file.
+              The artwork a certificate is printed onto. Open one to place its boxes,
+              or Edit it to rename it, replace the file or refresh it from Canva.
             </p>
           </div>
 
@@ -216,10 +216,11 @@ export default async function TemplatesPage({
             className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3"
           >
             {templates.map((template) => (
-              <Link
+              // A div, not one big link: the Edit link inside can't nest in another <a>.
+              // The name's link stretches over the whole card (after:inset-0) instead.
+              <div
                 key={template.uuid ?? template.id}
-                href={`/templates/${template.uuid}`}
-                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-150 hover:bg-accent hover:text-accent-foreground focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-accent"
+                className="group relative flex flex-col border-r-2 border-b-2 border-border transition-colors duration-150 hover:bg-accent hover:text-accent-foreground"
               >
                 <TemplatePreview
                   file={template.file}
@@ -230,7 +231,12 @@ export default async function TemplatesPage({
                 <div className="flex items-end justify-between gap-4 p-5 md:p-6">
                   <div className="min-w-0">
                     <h3 className="truncate text-2xl leading-none font-bold tracking-tighter uppercase">
-                      {template.name}
+                      <Link
+                        href={`/templates/${template.uuid}`}
+                        className="outline-none after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-4 focus-visible:after:outline-accent"
+                      >
+                        {template.name}
+                      </Link>
                     </h3>
                     <p
                       suppressHydrationWarning
@@ -243,12 +249,28 @@ export default async function TemplatesPage({
                       )}
                     </p>
                   </div>
-                  <ArrowUpRight
-                    className="size-5 shrink-0 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
-                    aria-hidden="true"
-                  />
+                  <div className="flex shrink-0 items-center gap-4">
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="relative z-10 border-2 bg-background text-foreground"
+                    >
+                      <Link
+                        href={`/templates/${template.uuid}?settings=1`}
+                        aria-label={`Edit ${template.name}`}
+                      >
+                        <Settings2 aria-hidden="true" />
+                        Edit
+                      </Link>
+                    </Button>
+                    <ArrowUpRight
+                      className="size-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"
+                      aria-hidden="true"
+                    />
+                  </div>
                 </div>
-              </Link>
+              </div>
             ))}
           </section>
         )}

@@ -20,6 +20,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import {
   ALIGNMENTS,
   BOX_DEFAULTS,
+  CORNERS,
   FONTS,
   GUIDE_FRACTIONS,
   HANDLES,
@@ -240,9 +241,12 @@ export function TemplateWorkspace({
   const router = useRouter();
   const [guides, setGuides] = useState<SnapLines>({});
   const [dragging, setDragging] = useState(false);
+  // QR boxes resize from the corners only and stay square.
+  const isSquare = (box: EditorBox) => box.kind === "text" && isQr(box.type);
   const gesture = useRef<{
     id: number;
     handle?: Handle;
+    square: boolean;
     anchor: Anchor;
     pointerX: number;
     pointerY: number;
@@ -323,6 +327,7 @@ export function TemplateWorkspace({
     gesture.current = {
       id: box.id,
       handle,
+      square: isSquare(box),
       anchor: {
         x: anchorAt((e.clientX - grab.left) / grab.width),
         y: anchorAt((e.clientY - grab.top) / grab.height),
@@ -339,13 +344,13 @@ export function TemplateWorkspace({
     const dx = (e.clientX - g.pointerX) / scale;
     const dy = (e.clientY - g.pointerY) / scale;
     const raw = g.handle
-      ? resizeBox(g.rect, g.handle, dx, dy, natural)
+      ? resizeBox(g.rect, g.handle, dx, dy, natural, g.square)
       : moveBox(g.rect, dx, dy, natural);
     // Alt places freely; otherwise the nearest guide within reach takes the box.
     const snapped = e.altKey
       ? { rect: raw, lines: {} }
       : g.handle
-        ? snapResize(raw, g.handle, natural, SNAP_PX / scale)
+        ? snapResize(raw, g.handle, natural, SNAP_PX / scale, g.square)
         : snapMove(raw, natural, SNAP_PX / scale, g.anchor);
     patch(g.id, snapped.rect);
     setGuides(snapped.lines);
@@ -612,7 +617,7 @@ export function TemplateWorkspace({
                       )}
 
                       {active
-                        ? HANDLES.map((handle) => (
+                        ? (isSquare(box) ? CORNERS : HANDLES).map((handle) => (
                             <span
                               key={handle}
                               aria-hidden="true"
@@ -848,28 +853,37 @@ export function TemplateWorkspace({
                       />
                     </label>
 
-                    {(["x", "y", "width", "height"] as const).map((field) => (
+                    {/* A QR box is square: one size field sets both sides. */}
+                    {(isSquare(selected)
+                      ? (["x", "y", "width"] as const)
+                      : (["x", "y", "width", "height"] as const)
+                    ).map((field) => (
                       <label key={field}>
-                        <span className={LABEL}>{field}</span>
+                        <span className={LABEL}>
+                          {field === "width" && isSquare(selected) ? "size" : field}
+                        </span>
                         <input
                           type="number"
                           min={field === "width" || field === "height" ? 1 : 0}
                           max={
                             natural
-                              ? field === "x" || field === "width"
-                                ? natural.width
-                                : natural.height
+                              ? field === "width" && isSquare(selected)
+                                ? Math.min(natural.width, natural.height)
+                                : field === "x" || field === "width"
+                                  ? natural.width
+                                  : natural.height
                               : undefined
                           }
                           value={selected[field]}
-                          onChange={(e) =>
-                            patch(selected.id, {
-                              [field]: Math.max(
-                                0,
-                                Math.round(Number(e.target.value) || 0)
-                              ),
-                            })
-                          }
+                          onChange={(e) => {
+                            const value = Math.max(0, Math.round(Number(e.target.value) || 0));
+                            patch(
+                              selected.id,
+                              field === "width" && isSquare(selected)
+                                ? { width: value, height: value }
+                                : { [field]: value }
+                            );
+                          }}
                           onBlur={() => persist(selected.id)}
                           className={FIELD}
                         />

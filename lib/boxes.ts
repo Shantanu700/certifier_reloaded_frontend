@@ -52,6 +52,8 @@ export const MIN_BOX = 8;
 // Corners resize two edges, edge midpoints one.
 export const HANDLES = ["nw", "n", "ne", "e", "se", "s", "sw", "w"] as const;
 export type Handle = (typeof HANDLES)[number];
+/** QR boxes resize from these only, staying square. */
+export const CORNERS = ["nw", "ne", "se", "sw"] as const;
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
@@ -68,7 +70,8 @@ export function resizeBox(
   handle: Handle,
   dx: number,
   dy: number,
-  b: Bounds
+  b: Bounds,
+  square = false
 ): Rect {
   const west = handle.includes("w");
   const east = handle.includes("e");
@@ -92,6 +95,15 @@ export function resizeBox(
   if (bottom - top < MIN_BOX) {
     if (north) top = bottom - MIN_BOX;
     else bottom = top + MIN_BOX;
+  }
+
+  if (square) {
+    // The opposite corner stays put; the side grows to the larger drag, as far as the page allows.
+    const anchorX = west ? start.x + start.width : start.x;
+    const anchorY = north ? start.y + start.height : start.y;
+    const room = Math.min(west ? anchorX : b.width - anchorX, north ? anchorY : b.height - anchorY);
+    const side = clamp(Math.max(right - left, bottom - top), Math.min(MIN_BOX, room), room);
+    return { x: west ? anchorX - side : anchorX, y: north ? anchorY - side : anchorY, width: side, height: side };
   }
 
   return { x: left, y: top, width: right - left, height: bottom - top };
@@ -140,12 +152,16 @@ export function snapMove(
   };
 }
 
-/** Snaps only the edges `handle` drags: one axis for an edge handle, both for a corner. */
+/**
+ * Snaps only the edges `handle` drags: one axis for an edge handle, both for a corner.
+ * A square box snaps the nearer of its two dragged edges and grows the other to match.
+ */
 export function snapResize(
   rect: Rect,
   handle: Handle,
   b: Bounds,
-  threshold: number
+  threshold: number,
+  square = false
 ): { rect: Rect; lines: SnapLines } {
   const x = handle.includes("w")
     ? nearestGuide([rect.x], b.width, threshold)
@@ -157,6 +173,19 @@ export function snapResize(
     : handle.includes("s")
       ? nearestGuide([rect.y + rect.height], b.height, threshold)
       : null;
+  if (square) {
+    const useX = x && (!y || Math.abs(x.shift) <= Math.abs(y.shift));
+    // How much the side grows: dragging a west/north edge outward is a negative shift.
+    const grow = useX
+      ? (handle.includes("e") ? 1 : -1) * x.shift
+      : y
+        ? (handle.includes("s") ? 1 : -1) * y.shift
+        : 0;
+    return {
+      rect: resizeBox(rect, handle, handle.includes("e") ? grow : -grow, handle.includes("s") ? grow : -grow, b, true),
+      lines: useX ? { x: x.line } : { y: y?.line },
+    };
+  }
   return {
     rect: resizeBox(rect, handle, x?.shift ?? 0, y?.shift ?? 0, b),
     lines: { x: x?.line, y: y?.line },

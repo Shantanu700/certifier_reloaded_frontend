@@ -4,6 +4,7 @@ import { ArrowLeft, ExternalLink, SlidersHorizontal, Trash2 } from "lucide-react
 
 import { deleteTemplate, editCertificate, syncFromCanva, updateTemplate } from "@/app/actions";
 import { AppHeader } from "@/components/app-header";
+import { CanvaQualitySlider } from "@/components/canva-quality-slider";
 import { CsvPanel, GeneratePanel, MappingPanel } from "@/components/batch-panels";
 import { ConfirmPopover } from "@/components/confirm-popover";
 import { ISSUE_FILTERS, IssuePanel, type IssueFilter } from "@/components/issue-panel";
@@ -322,10 +323,18 @@ export default async function TemplatePage({
           <h3 className={RAIL_HEADING}>From Canva</h3>
           <p className="mt-4 text-sm text-muted-foreground">
             Re-export page {template.canva_page ?? 1} of the Canva design after editing
-            it there. Placed boxes stay where they are, so the design&apos;s size must not
-            change. A template with no boxes yet is re-exported at full print quality.
+            it there. Leave the quality as it is to keep the current size; placed boxes
+            are scaled to fit a new one. The design&apos;s shape must not change.
           </p>
           <input type="hidden" name="uuid" value={templateUuid} />
+          <div className="mt-5">
+            <CanvaQualitySlider
+              id="sync-width"
+              thumbnailWidth={null}
+              thumbnailHeight={null}
+              currentUrl={fileUrl}
+            />
+          </div>
           <SubmitButton
             variant="outline"
             pendingLabel="Refreshing…"
