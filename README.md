@@ -54,7 +54,8 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
   to the same OAuth client id the backend has as `GOOGLE_CLIENT_ID`, and add
   `http://localhost:3000` to that client's authorised JavaScript origins. Without it the
   button is hidden.
-- There is no test suite yet.
+- `bun test` runs the unit tests (`lib/*.test.ts`). CI runs lint, the tests and a production build
+  (which is also the type check) on every pull request (`.github/workflows/ci.yml`).
 
 ## How the app works
 
