@@ -8,6 +8,8 @@ Built with Next.js 16 (App Router), React 19, Tailwind CSS v4 and shadcn/ui. It 
 a separate Django REST backend ([certifier_reloaded_backend](https://github.com/Shantanu700/certifier_reloaded_backend)),
 which holds all the data.
 
+The full feature list is in the [backend README](https://github.com/Shantanu700/certifier_reloaded_backend#features).
+
 Running it in production? See the [self-hosting guide](https://github.com/Shantanu700/certifier_reloaded_backend/blob/main/docs/self-hosting.md), which covers both apps and ends with a checklist.
 
 ## Running the project
