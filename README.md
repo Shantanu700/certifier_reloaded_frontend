@@ -16,7 +16,7 @@ Running it in production? See the [self-hosting guide](https://github.com/Shanta
 
 ### Prerequisites
 
-- [Bun](https://bun.sh) (the package manager for this repo — ignore `package-lock.json`)
+- [Bun](https://bun.sh), the package manager for this repo (`bun.lock`)
 - The Django backend, at `https://localhost:8022` by default (see `NEXT_PUBLIC_API_URL` below)
 - An S3 bucket configured on the backend, with CORS allowing `PUT` and `GET` from
   `http://localhost:3000` and the `Content-Type` request header (uploads go straight

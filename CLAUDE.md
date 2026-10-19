@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-Package manager is **bun** (`bun.lock`; `package-lock.json` is stale from scaffolding).
+Package manager is **bun** (`bun.lock`, the only lockfile). `package.json` `overrides` pins `js-yaml` to a patched 4.x for `@hey-api/openapi-ts`, which pins an older one; drop it once upstream catches up.
 
 ```bash
 bun dev          # dev server (also regenerates AGENTS.md — see below)

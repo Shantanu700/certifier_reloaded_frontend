@@ -26,7 +26,7 @@ jobs:
       - name: Build
         run: bun run build
 
-  # Every commit in a pull request needs a DCO sign-off from its author (CONTRIBUTING.md).
+  # Every commit in a pull request needs a DCO sign-off from its author (CONTRIBUTING.md); bot commits are exempt.
   dco:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -42,6 +42,8 @@ jobs:
           status=0
           for c in $(git rev-list --no-merges "$BASE..$HEAD"); do
             author=$(git show -s --format='%ae' "$c")
+            # Bots (Dependabot and co.) sign off with a different address than they author with.
+            case "$author" in *"[bot]@users.noreply.github.com") continue ;; esac
             if ! git show -s --format='%(trailers:key=Signed-off-by,valueonly)' "$c" | grep -qiF "<$author>"; then
               echo "::error::$(git show -s --format='%h %s' "$c"): no Signed-off-by for $author. Sign off with git commit -s (see CONTRIBUTING.md)."
               status=1
