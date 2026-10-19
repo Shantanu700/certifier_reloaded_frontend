@@ -14,7 +14,7 @@ import {
 } from "@/lib/boxes";
 import { asNamingParts } from "@/lib/api";
 import { flashCookie, type FlashType } from "@/lib/flash";
-import { SESSION_COOKIE, requireSession, sessionHeader } from "@/lib/session";
+import { SESSION_COOKIE, forwardedFor, requireSession, sessionHeader } from "@/lib/session";
 import {
   deleteCanvaConnection,
   deleteCertificateBatches,
@@ -146,6 +146,7 @@ export async function register(
   try {
     result = await postCoreRegister({
       body: { username, name: field("name"), email: field("email"), password, role },
+      headers: await forwardedFor(),
     });
   } catch {
     return { error: "Can't reach the server. Try again in a moment.", username };
