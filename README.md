@@ -10,8 +10,6 @@ which holds all the data.
 
 The full feature list is in the [backend README](https://github.com/Shantanu700/certifier_reloaded_backend#features).
 
-Running it in production? See the [self-hosting guide](https://github.com/Shantanu700/certifier_reloaded_backend/blob/main/docs/self-hosting.md), which covers both apps and ends with a checklist.
-
 ## Running the project
 
 ### Prerequisites
@@ -60,6 +58,15 @@ bun run openapi-ts   # regenerate the API client in src/client/ from the backend
   button is hidden.
 - `bun test` runs the unit tests (`lib/*.test.ts`). CI runs lint, the tests and a production build
   (which is also the type check) on every pull request (`.github/workflows/ci.yml`).
+
+## Going live
+
+The [self-hosting guide](https://github.com/Shantanu700/certifier_reloaded_backend/blob/main/docs/self-hosting.md) in the backend repo walks through a production deployment of both apps step by step. In short:
+
+1. **Backend first**: deploy the API, its Celery worker and their services (PostgreSQL, Redis, an S3-compatible bucket, SMTP) as the guide describes. Add your frontend's address to the bucket's CORS rule.
+2. **Build**: set `NEXT_PUBLIC_API_URL` (the API's address, as this app's server reaches it) and, if you use Google sign-in, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, then run `bun install --frozen-lockfile` and `bun run build`. Both values are built into the app, so rebuild after changing them.
+3. **Run**: `bun run start` under a process manager, behind a reverse proxy with HTTPS that appends the visitor's address to `X-Forwarded-For`. Logins don't work over plain http, because the session cookie is marked secure.
+4. **Before launch**: work through the [production checklist](https://github.com/Shantanu700/certifier_reloaded_backend/blob/main/docs/self-hosting.md#production-checklist).
 
 ## How the app works
 
